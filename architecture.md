@@ -341,12 +341,15 @@ cost_events(trace_id, agent, model, tokens_in,
 
 | Agent        | Model        | Temperature | Context discipline                              |
 |--------------|--------------|-------------|-------------------------------------------------|
-| Orchestrator | Sonnet 4.6   | 0.3         | Chunk IDs + summaries only; not full chunks     |
-| Researcher   | Sonnet 4.6   | 0.5         | Search results + extracted text                 |
+| Orchestrator | Haiku 4.5    | 0.3         | Chunk IDs + summaries only; not full chunks. Sonnet 4.6 fallback if planning degrades (log reason). |
+| Researcher   | Haiku 4.5    | 0.5         | Search results + extracted text. Corpus-relevance is cosine, not LLM. |
 | Writer       | Sonnet 4.6   | 0.7         | Full cited chunks + voice anchors + brief       |
 | Validator    | Opus 4.7     | 0.0         | Draft + cited chunks + editorial rules          |
 
-[OPEN] Validate Opus 4.7 vs Sonnet 4.6 for Validator with a small comparison.
+[RESOLVED 2026-05-15] Opus 4.7 locked for Validator. Empirical comparison run
+deferred to S3 (same draft, both models, certainty-inflation + editorial-gate
+cases). Orchestrator + Researcher downgraded to Haiku 4.5 — hard logic is in
+Python, not the model. Details: DECISIONS.md 2026-05-15 per-agent-model-tiering.
 
 ### Rate limiting and cost control
 
@@ -432,6 +435,19 @@ set up API keys locally.
 10. **Replay reproducibility contract**: temperature != 0 means runs aren't
     bit-identical. What does "replay" actually guarantee?
 
-## [OPEN] ITEMS TO RESOLVE BEFORE PHASE 1 IMPLEMENTATION
+## [RESOLVED] ITEMS FROM PRE-PHASE-1 REVIEW
 
-See project-spec.md for full list with recommendations.
+All 10 stress-test items and 13 project-spec open questions resolved in Phase 1
+(2026-05-15, Opus 4.7). Key architectural changes vs original spec:
+
+- Model tiering: Orchestrator + Researcher → Haiku 4.5 (was Sonnet 4.6)
+- Validator: 5-layer pipeline with deterministic pre-gate (Layer 0) added —
+  not in original spec. Load-bearing: corpus itself contains prohibited claims.
+- do_not_discuss: mode-aware typed struct + dual enforcement (citation join +
+  draft-body scan) — original was a boolean flag only.
+- Concurrency: asyncio.gather over two Messages API calls — original spec
+  incorrectly stated "Anthropic parallel tool calls" handles it.
+- Corpus count: 6 docs (not 7 — was a miscount).
+
+Full resolution notes: project-spec.md "OPEN QUESTIONS — RESOLVED" section.
+Full rationale: DECISIONS.md (2026-05-15 entries) + METHODOLOGY.md.
