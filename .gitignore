@@ -22,12 +22,18 @@ build/
 *.sqlite
 *.sqlite3
 
-# IDEs
+# IDEs / OS
 .vscode/
 .idea/
 *.swp
 *.swo
 .DS_Store
+**/.DS_Store
+
+# Test artifacts
+.pytest_cache/
+.coverage
+htmlcov/
 
 # uv
 uv.lock
