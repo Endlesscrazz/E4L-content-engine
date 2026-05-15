@@ -1,0 +1,46 @@
+# Virtual environment
+.venv/
+
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+.Python
+*.egg-info/
+dist/
+build/
+.eggs/
+
+# Environment variables — never committed
+.env
+.env.*
+!.env.example
+
+# SQLite databases
+*.db
+*.sqlite
+*.sqlite3
+
+# IDEs
+.vscode/
+.idea/
+*.swp
+*.swo
+.DS_Store
+
+# uv
+uv.lock
+
+# Markdown working docs — internal only
+# Exceptions: README.md and architecture.md are public-facing
+*.md
+!README.md
+!architecture.md
+
+# Context-bridge artifacts (accidentally ended up in source_docs)
+source_docs/context-bridge-*
+
+# Corpus raw files are committed; generated embeddings/db are not
+corpus/*.db
+corpus/*.sqlite
