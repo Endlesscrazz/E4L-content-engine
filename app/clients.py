@@ -73,6 +73,7 @@ class AnthropicClient:
         messages: list[dict[str, Any]],
         system: str | None = None,
         tools: list[dict[str, Any]] | None = None,
+        tool_choice: dict[str, Any] | None = None,
         max_tokens: int = 4096,
         temperature: float = 0.3,
     ) -> tuple[anthropic.types.Message, float]:
@@ -92,6 +93,8 @@ class AnthropicClient:
                     kwargs["system"] = system
                 if tools:
                     kwargs["tools"] = tools
+                if tool_choice:
+                    kwargs["tool_choice"] = tool_choice
 
                 response = self._client.messages.create(**kwargs)
                 cost = self._compute_cost(model, response)
