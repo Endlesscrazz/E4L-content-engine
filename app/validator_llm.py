@@ -135,14 +135,32 @@ def _build_judge_message(
     return "\n".join(parts)
 
 
+def _coerce_list(val: Any) -> list[str]:
+    """Guard against models returning a JSON-encoded string instead of a list.
+    Sonnet occasionally stringifies array fields; Opus follows the schema correctly.
+    This keeps _parse_verdict robust across both models in the comparison script."""
+    if isinstance(val, list):
+        return val
+    if isinstance(val, str) and val:
+        import json
+        try:
+            parsed = json.loads(val)
+            if isinstance(parsed, list):
+                return [str(x) for x in parsed]
+        except (json.JSONDecodeError, ValueError):
+            pass
+        return [val]
+    return []
+
+
 def _parse_verdict(tool_input: dict[str, Any]) -> LLMJudgeResult:
     """Map submit_verdict tool call arguments to LLMJudgeResult."""
     passed = tool_input["passed"]
     return LLMJudgeResult(
         passed=passed,
         grounding_pass=tool_input["grounding_pass"],
-        taxonomy_issues=tool_input.get("taxonomy_issues", []),
-        certainty_inflation_issues=tool_input.get("certainty_inflation_issues", []),
+        taxonomy_issues=_coerce_list(tool_input.get("taxonomy_issues", [])),
+        certainty_inflation_issues=_coerce_list(tool_input.get("certainty_inflation_issues", [])),
         voice_pass=tool_input["voice_pass"],
         tone_pass=tool_input["tone_pass"],
         revision_notes=tool_input.get("revision_notes") if not passed else None,
@@ -168,6 +186,8 @@ def run_llm_judge(
     system_prompt = _load_system_prompt()
     user_message = _build_judge_message(draft, cited_chunks, brief, voice_anchors)
 
+    # temperature omitted — deprecated for Claude 4 models (Opus 4.7, Sonnet 4.6).
+    # Tool use with a single forced tool already produces deterministic output.
     response, cost = client.create(
         model=model,
         system=system_prompt,
@@ -175,7 +195,6 @@ def run_llm_judge(
         tools=[SUBMIT_VERDICT_TOOL],
         tool_choice={"type": "tool", "name": "submit_verdict"},
         max_tokens=1024,
-        temperature=0.0,
     )
 
     tool_block = None

@@ -175,6 +175,7 @@ def detect_conflicts(chunks: list[SourceChunk]) -> list[SourceChunk]:
 # ── Main ──────────────────────────────────────────────────────────────────────
 
 def main() -> None:
+    load_dotenv(".env.local", override=True)
     load_dotenv()
 
     parser = argparse.ArgumentParser(

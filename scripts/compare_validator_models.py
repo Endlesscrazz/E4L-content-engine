@@ -16,12 +16,17 @@ in precision, false positives, or revision note quality.
 from __future__ import annotations
 
 import os
+import sys
 import time
 from pathlib import Path
 
+# Allow running from project root or scripts/ directory.
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+
 from dotenv import load_dotenv
 
-load_dotenv()
+load_dotenv(".env.local", override=True)  # project-local secrets take precedence
+load_dotenv()                             # fallback to .env for anything not in .env.local
 
 # Ensure ANTHROPIC_API_KEY is set before importing clients
 if not os.environ.get("ANTHROPIC_API_KEY"):
