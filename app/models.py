@@ -290,3 +290,45 @@ class RunBudget(BaseModel):
     def record(self, cost_usd: float) -> None:
         self.turns_used += 1
         self.cost_usd_spent = round(self.cost_usd_spent + cost_usd, 6)
+
+
+# ─── ContentPack ──────────────────────────────────────────────────────────────
+
+class ContentPack(BaseModel):
+    """Top-level output of run_orchestrator(). Serialized directly by the S6 API endpoint."""
+
+    trace_id: str
+    brief: ContentBrief
+    linkedin_draft: Draft | None = None
+    email_draft: Draft | None = None
+    linkedin_verdict: ValidatorVerdict | None = None
+    email_verdict: ValidatorVerdict | None = None
+    revisions_used: int = 0
+    status: Literal["complete", "partial", "cap_hit", "refused"] = "complete"
+    budget: RunBudget
+    research: ResearchResult | None = None
+
+
+# ─── Observability records ─────────────────────────────────────────────────────
+
+class RunRecord(BaseModel):
+    """Maps to the `runs` table in obs.db. One row per pipeline run."""
+
+    trace_id: str
+    brief_json: str
+    status: str = "running"
+    start_ts: str
+    end_ts: str | None = None
+    total_cost_usd: float = 0.0
+    turns_used: int = 0
+
+
+class ToolCallEvent(BaseModel):
+    """Maps to `tool_call_events` in obs.db. One row per tool_use in any agent loop."""
+
+    trace_id: str
+    agent_name: str
+    tool_name: str
+    input_json: str
+    output_json: str
+    ts: str
