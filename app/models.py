@@ -238,6 +238,31 @@ class AgentTelemetry(BaseModel):
     error: str | None = None
 
 
+# ─── Researcher ───────────────────────────────────────────────────────────────
+
+class ResearchFinding(BaseModel):
+    """One scored web result kept by the Researcher (label keep or weak)."""
+
+    title: str
+    url: str
+    snippet: str = Field(..., description="Scored text excerpt, capped at 600 chars.")
+    relevance_score: float = Field(..., ge=0.0, le=1.0)
+    relevance_label: Literal["keep", "weak", "drop"]
+
+
+class ResearchResult(BaseModel):
+    """Full output of a Researcher run. findings=[] when nothing passes threshold."""
+
+    findings: list[ResearchFinding] = Field(default_factory=list)
+    no_context_reason: str | None = Field(
+        default=None,
+        description="Set to 'no trend context available' when Brave returns nothing "
+                    "useful or all results score below threshold after reformulation.",
+    )
+    actions_used: int = 0
+    cost_usd: float = 0.0
+
+
 # ─── RunBudget ────────────────────────────────────────────────────────────────
 
 class RunBudget(BaseModel):
