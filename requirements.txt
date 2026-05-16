@@ -19,6 +19,9 @@ pydantic-settings==2.9.1
 # Vector store
 sqlite-vec==0.1.6
 
+# Document parsing
+python-docx==1.1.2
+
 # Async
 anyio==4.9.0
 

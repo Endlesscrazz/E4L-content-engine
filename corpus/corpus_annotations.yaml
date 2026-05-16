@@ -1,0 +1,72 @@
+# Provenance-tracked corpus annotations.
+#
+# annotation_source:
+#   human_reviewed = explicitly identified by E4L content team / architecture review
+#   inferred       = applied programmatically via content pattern matching
+#
+# Applied by scripts/ingest_corpus.py after chunking.
+# DO NOT edit chunk_ids here — they are assigned at ingest time.
+
+# ── Doc-level defaults ────────────────────────────────────────────────────────
+# audience_tags applied to every chunk from each doc.
+
+doc_level_defaults:
+  "Energy4Life Origin Story.docx":
+    audience_tags: [consumer, practitioner]
+    annotation_source: human_reviewed
+
+  "Energy4Life Differentiation.docx":
+    audience_tags: [practitioner, consumer]
+    annotation_source: human_reviewed
+
+  "AI Version of Restore Your Energy with Bioenergetics.docx":
+    audience_tags: [consumer]
+    annotation_source: human_reviewed
+
+  "Energy4Life Research Summary.txt":
+    audience_tags: [practitioner, consumer]
+    annotation_source: human_reviewed
+
+  "E4L miHealth Product Summary w_o Original.docx":
+    audience_tags: [practitioner, consumer]
+    annotation_source: human_reviewed
+
+  "Bioenergetic Wellness System (BWS) Product Summary.docx":
+    audience_tags: [practitioner]
+    annotation_source: human_reviewed
+
+
+# ── Voice anchors ─────────────────────────────────────────────────────────────
+# Chunks representing Harry Massey's first-person editorial voice.
+# Injected into Writer prompts to ground consumer-facing tone.
+# Matched by (doc_name_contains AND any string in content_contains_any).
+
+voice_anchors:
+  - doc_name_contains: "AI Version"
+    content_contains_any:
+      - "I've previously explained"
+      - "As I worked with Peter Fraser"
+      - "While countless other approaches had failed me"
+      - "I knew he needed to introduce this to the world"
+    annotation_source: human_reviewed
+
+
+# ── Product associations ──────────────────────────────────────────────────────
+# Applied to ALL chunks via regex scan. annotation_source: inferred.
+# Regex is case-insensitive.
+
+product_pattern_associations:
+  - pattern: "\\bmiHealth\\b"
+    product: miHealth
+
+  - pattern: "Bioenergetic Wellness System|\\bBWS\\b"
+    product: BWS
+
+  - pattern: "Infoceutical"
+    product: Infoceuticals
+
+  - pattern: "\\bGEM\\b"
+    product: GEM
+
+  - pattern: "Cell Driver|Skin Driver|Energetic Rejuvenator|\\bER\\d+\\b"
+    product: Infoceuticals
