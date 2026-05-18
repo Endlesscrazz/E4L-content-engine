@@ -28,11 +28,11 @@
                                    ▼
                    ┌────────────────────────────────┐
                    │   Orchestrator Agent           │
-                   │   (Sonnet 4.6, temp 0.3)       │
+                   │   (Haiku 4.5, temp 0.3)        │
                    │   - plans content pack         │
                    │   - dispatches specialists     │
                    │   - parallel Writers           │
-                   │   - revision loop (max 2)      │
+                   │   - revision loop (max 3)      │
                    │   - turn cap: 15               │
                    │   - cost cap: $0.50/run        │
                    └────────────┬───────────────────┘
@@ -71,9 +71,8 @@
                      ┌──────────────────────────┐
                      │   Observability sqlite   │
                      │   - runs table           │
-                     │   - tool_calls table     │
-                     │   - agent_messages table │
-                     │   - cost_events table    │
+                     │   - agent_calls table    │
+                     │   - tool_call_events     │
                      │   indexed by trace_id    │
                      └──────────────────────────┘
 ```
@@ -84,7 +83,7 @@ Data flow (typical run):
 3. Orchestrator calls retrieve_source_chunks to build a ContentBrief
 4. Orchestrator dispatches Writers in parallel (LinkedIn + Email)
 5. Orchestrator calls Validator on each draft
-6. On fail: Orchestrator calls Writer again with revision_notes (max 2 rounds)
+6. On fail: Orchestrator calls Writer again with revision_notes (max 3 rounds)
 7. All pass or turn/cost cap hit: finalize_pack
 8. Frontend streams intermediate events throughout via SSE
 
@@ -99,7 +98,7 @@ Data flow (typical run):
 | Backend          | FastAPI                       | Async, SSE-friendly                                  | MEDIUM-HIGH   |
 | Frontend         | Vanilla HTML/JS + SSE         | No build step; minimal surface area                  | MEDIUM        |
 | External search  | Brave Search API              | Visible agentic tool                                 | LOW (new)     |
-| Source LLMs      | Sonnet 4.6 + Opus 4.7 (Validator) | Cost/quality balance                             | MEDIUM-HIGH   |
+| Source LLMs      | Haiku 4.5 (Orch/Researcher) + Sonnet 4.6 (Writer) + Opus 4.7 (Validator) | Cost/quality balance per agent tier | MEDIUM-HIGH   |
 | Persistence      | sqlite (corpus + obs)         | One file each, no external deps                      | HIGH          |
 | Container        | Docker Compose                | Reproducibility signal for AI Infra role             | MEDIUM        |
 
@@ -196,23 +195,21 @@ Used in Writer system prompts and Validator voice check:
 | Field                | Type    | Purpose                                                            |
 |----------------------|---------|--------------------------------------------------------------------|
 | chunk_id             | TEXT PK | Stable identifier — used in citations                              |
-| source_doc           | TEXT    | Filename of origin doc                                             |
-| section_heading      | TEXT    | Heading the chunk falls under                                      |
+| doc_name             | TEXT    | Filename of origin doc                                             |
+| doc_type             | TEXT    | Doc-level category used by chunker                                 |
 | content              | TEXT    | The chunk text                                                     |
-| embedding            | VECTOR  | Gemini 3072-dim                                                    |
-| audience             | TEXT    | "consumer" / "practitioner" / "both"                               |
+| embedding            | VECTOR  | Gemini 3072-dim (vec0 virtual table, separate row)                 |
+| audience_tags        | JSON    | ["consumer"] / ["practitioner"] / ["consumer","practitioner"]      |
 | content_type         | TEXT    | "principle" / "concept_explainer" / "personal_narrative" /        |
 |                      |         | "product_spec" / "research_finding" / "differentiator" /          |
 |                      |         | "origin_story"                                                     |
 | product_associations | JSON    | ["miHealth", "BWS", "Infoceuticals", "GEM"]                        |
-| has_research_claim   | BOOL    | Quantitative health claim present                                  |
-| quantitative_claim   | TEXT    | Extracted stat if has_research_claim                               |
-| sample_size          | INT     | If research_finding                                                |
-| do_not_discuss_flags | JSON    | ["peter_fraser_death", ...]                                        |
+| do_not_discuss       | BOOL    | True if chunk must not be volunteered or cited                     |
+| do_not_discuss_mode  | TEXT    | "never_in_generated_content" / "citation_only" / null             |
 | is_voice_anchor      | BOOL    | Strong Harry-voice exemplar                                        |
+| corpus_conflict      | TEXT    | Conflict note if chunk contradicts another, else null              |
 | annotation_source    | TEXT    | "explicit_in_source" / "obvious_from_doc_type" /                   |
 |                      |         | "llm_proposed_accepted" / "llm_proposed_overridden"                |
-| token_count          | INT     | Budget-aware retrieval                                             |
 
 ### ContentBrief (Orchestrator → Writer)
 
@@ -283,17 +280,15 @@ Used in Writer system prompts and Validator voice check:
 ### Observability Schema (sqlite)
 
 ```sql
-runs(trace_id, started_at, completed_at, status,
-     total_cost_usd, total_tokens, content_pack_id)
+runs(trace_id, brief_json, status, start_ts, end_ts,
+     total_cost_usd, turns_used, is_replay, replayed_from)
 
-tool_calls(trace_id, sequence, agent, tool_name,
-           input_json, output_json, latency_ms,
-           cost_usd, tokens_in, tokens_out)
+agent_calls(id, trace_id, agent_name, model,
+            tokens_in, tokens_out, cost_usd,
+            latency_ms, tool_calls, error, ts)
 
-agent_messages(trace_id, agent, role, content, timestamp)
-
-cost_events(trace_id, agent, model, tokens_in,
-            tokens_out, cost_usd, timestamp)
+tool_call_events(id, trace_id, agent_name, tool_name,
+                 input_json, output_json, ts)
 ```
 
 ## API / INTERFACE DESIGN
@@ -302,13 +297,13 @@ cost_events(trace_id, agent, model, tokens_in,
 
 | Method | Path                          | Purpose                                                |
 |--------|-------------------------------|--------------------------------------------------------|
-| POST   | /api/generate                 | `{goal, platforms, brief_overrides}` → `{trace_id}`    |
-| GET    | /api/stream/{trace_id}        | SSE: pipeline events as they happen                    |
-| GET    | /api/result/{trace_id}        | Final content pack with citations                      |
-| GET    | /api/runs                     | List recent runs (replay browser)                      |
-| GET    | /api/runs/{trace_id}/detail   | Full run trace: every tool call + message              |
-| GET    | /api/corpus/chunk/{chunk_id}  | Source chunk content (citation hover/click)            |
-| POST   | /api/runs/{trace_id}/replay   | Re-execute same inputs (reproducibility demo)          |
+| POST   | /generate                     | `{goal, platforms, brief_overrides}` → `{trace_id}`    |
+| GET    | /stream/{trace_id}            | SSE: pipeline events as they happen                    |
+| GET    | /result/{trace_id}            | Final content pack with citations                      |
+| GET    | /runs                         | List recent runs (replay browser)                      |
+| GET    | /runs/{trace_id}/detail       | Full run trace: every tool call + message              |
+| GET    | /corpus/chunk/{chunk_id}      | Source chunk content (citation hover/click)            |
+| GET    | /runs/{trace_id}/replay       | Re-execute same inputs (reproducibility demo)          |
 
 ### SSE event types
 
@@ -319,14 +314,12 @@ cost_events(trace_id, agent, model, tokens_in,
 
 ### Orchestrator's tools (Anthropic tool schemas)
 
-1. `research_topic(query, depth) → ResearchSummary`
-   — invokes the Researcher mini-agent
-2. `retrieve_source_chunks(query, filters, top_k) → List[Chunk]`
-3. `assemble_brief(...) → ContentBrief`
-4. `write_for_platform(platform, brief) → Draft`
-   — parallel-callable
-5. `validate_draft(draft, brief) → ValidatorVerdict`
-6. `finalize_pack(drafts) → ContentPack`
+1. `call_researcher(query) → ResearchSummary`
+   — invokes the Researcher mini-agent; corpus retrieval + brief assembly done Python-side on first call_writer
+2. `call_writer(platform, brief) → Draft`
+   — parallel-callable; both platforms dispatched in one turn via asyncio.gather
+3. `call_validator(draft, brief) → ValidatorVerdict`
+4. `finalize(status, reason, drafts) → ContentPack`
 
 ### Researcher's internal tools (its own loop)
 
@@ -360,7 +353,7 @@ Python, not the model. Details: DECISIONS.md 2026-05-15 per-agent-model-tiering.
 - Researcher cost cap: $0.10 of per-run budget
 - Orchestrator turn cap: 15
 - Researcher action cap: 5
-- Writer revision cap: 2 rounds per draft
+- Writer revision cap: 3 rounds per draft
 - API endpoint rate limit: 5 requests/min per IP
 
 ### Security
