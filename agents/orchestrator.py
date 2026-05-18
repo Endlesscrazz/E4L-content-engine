@@ -79,7 +79,7 @@ ORCHESTRATOR_MODEL = "claude-haiku-4-5-20251001"
 
 MAX_TURNS = 15
 MAX_COST_USD = 0.50
-MAX_REVISIONS = 2
+MAX_REVISIONS = 3
 
 _PROMPT_PATH = Path(__file__).resolve().parents[1] / "prompts" / "orchestrator_system.txt"
 _SYSTEM_PROMPT: str | None = None
@@ -202,6 +202,8 @@ async def run_orchestrator(
     obs_conn: sqlite3.Connection | None = None,
     trace_id: str = "",
     on_event: Callable[[str, dict], None] = lambda *_: None,
+    is_replay: bool = False,
+    replayed_from: str | None = None,
 ) -> ContentPack:
     """
     Run the full Orchestrator pipeline. Returns ContentPack with all results.
@@ -209,6 +211,7 @@ async def run_orchestrator(
     obs_conn: open observability sqlite connection. None disables obs writes (tests).
     on_event: SSE stub — S6 replaces this no-op with the actual SSE emitter.
     trace_id: generated at API layer and threaded through. Auto-generated if empty.
+    is_replay / replayed_from: set by the S7 replay endpoint; stored in obs.db runs table.
     """
     if not trace_id:
         trace_id = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%S") + "_auto"
@@ -223,6 +226,8 @@ async def run_orchestrator(
                 brief_json=brief.model_dump_json(),
                 status="running",
                 start_ts=datetime.now(timezone.utc).isoformat(),
+                is_replay=is_replay,
+                replayed_from=replayed_from,
             ),
         )
 
@@ -294,6 +299,27 @@ async def run_orchestrator(
 
         if response.stop_reason == "end_turn":
             logger.warning("[%s] Orchestrator end_turn without finalize", trace_id)
+            # Code-side fallback: if Haiku refused via text on turn 1 with no drafts,
+            # this is an editorial gate hit. Detect by refusal keywords in text blocks.
+            if not drafts and budget.turns_used <= 2:
+                text_content = " ".join(
+                    b.text for b in response.content
+                    if hasattr(b, "text") and b.text
+                ).lower()
+                refusal_signals = ("cannot", "refuse", "cure", "medical", "editorial", "policy", "violat")
+                if any(sig in text_content for sig in refusal_signals):
+                    finalize_status = "refused"
+                    # Use Haiku's actual response text so the UI shows a human-readable
+                    # explanation — same UX as a clean finalize(refused) call.
+                    # Emit pipeline_finalizing (not pipeline_warning) so Alpine sets
+                    # this.refusalReason and the banner shows the reason.
+                    raw_text = " ".join(
+                        b.text for b in response.content
+                        if hasattr(b, "text") and b.text
+                    ).strip()
+                    finalize_reason = raw_text[:400] if raw_text else "Editorial guardrails triggered."
+                    on_event("pipeline_finalizing", {"status": "refused", "reason": finalize_reason})
+                    break
             on_event("pipeline_warning", {"message": "end_turn without finalize"})
             break
 
@@ -454,6 +480,7 @@ async def run_orchestrator(
         email_verdict=verdicts.get(Platform.EMAIL),
         revisions_used=revisions_used,
         status=finalize_status,
+        finalize_reason=finalize_reason,
         budget=budget,
         research=research,
     )
@@ -473,6 +500,9 @@ async def run_orchestrator(
         "turns_used": budget.turns_used,
         "cost_usd": round(budget.cost_usd_spent, 4),
         "shipped_platforms": [p.value for p in shipped],
+        # ContentPack included here so the SSE client receives the full result
+        # in one event and does not need a separate GET /result poll.
+        "content_pack": pack.model_dump(),
     })
 
     logger.info(
@@ -538,6 +568,7 @@ async def _dispatch_tool(
                 brave_client=brave_client,
                 db_conn=corpus_conn,
                 trace_id=trace_id,
+                obs_conn=obs_conn,
             )
             on_event("researcher_done", {
                 "findings": len(result_obj.findings),
@@ -562,6 +593,18 @@ async def _dispatch_tool(
             }, False, "", ""
 
         draft = drafts[platform]
+
+        # Guard: scan draft body for injection patterns before passing to Validator.
+        # A hallucinating or adversarially-influenced writer could embed directives
+        # in the draft text that would enter the Validator's context window.
+        from app.security import scan_agent_output
+        if not scan_agent_output(draft.body):
+            logger.warning("[%s] Injection pattern detected in %s draft body — rejecting", trace_id, platform.value)
+            return {
+                "status": "error",
+                "message": "Draft body failed security scan. Rewrite without embedded instructions.",
+            }, False, "", ""
+
         on_event("validator_start", {"platform": platform.value, "trace_id": trace_id})
         try:
             chunks_dict = {c.chunk_id: c for c in (corpus_chunks or [])}

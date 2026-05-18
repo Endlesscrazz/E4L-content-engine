@@ -97,7 +97,9 @@ class AnthropicClient:
                 if temperature is not None:
                     kwargs["temperature"] = temperature
 
-                response = self._client.messages.create(**kwargs)
+                # 120s per turn — prevents indefinite hangs when Anthropic API stalls.
+                # Writers run in asyncio.to_thread; a hung thread starves the pool.
+                response = self._client.messages.create(**kwargs, timeout=120.0)
                 cost = self._compute_cost(model, response)
                 return response, cost
 
@@ -131,7 +133,7 @@ class GeminiEmbedder:
     Retries on quota/503 with backoff.
     """
 
-    MODEL = "models/text-embedding-004"
+    MODEL = "models/gemini-embedding-001"
     DIMS = 3072
 
     def __init__(self) -> None:
@@ -140,25 +142,36 @@ class GeminiEmbedder:
             raise EnvironmentError("GEMINI_API_KEY is not set")
         genai.configure(api_key=api_key)
 
+    _BATCH_SIZE = 50  # Gemini supports up to 100 per call; 110 chunks = 3 calls total
+    _QUOTA_WAIT_S = 65.0  # wait one full rate-limit window on 429 before retry
+
     def embed(self, texts: list[str]) -> list[list[float]]:
-        """Batch embed texts. Returns a list of 3072-dim float vectors."""
+        """Batch embed texts, sending up to _BATCH_SIZE per API call.
+
+        On 429 quota errors waits a full 65s window before retrying instead
+        of the short exponential backoff used for transient errors.
+        """
         results: list[list[float]] = []
-        for text in texts:
+        for i in range(0, len(texts), self._BATCH_SIZE):
+            batch = texts[i : i + self._BATCH_SIZE]
             for attempt in range(_MAX_ATTEMPTS):
                 try:
                     result = genai.embed_content(
                         model=self.MODEL,
-                        content=text,
+                        content=batch,
                         task_type="retrieval_document",
                     )
-                    results.append(result["embedding"])
+                    results.extend(result["embedding"])
                     break
                 except Exception as exc:
                     if attempt == _MAX_ATTEMPTS - 1:
                         raise
-                    delay = _jitter_delay(attempt)
+                    is_quota = "429" in str(exc) or "quota" in str(exc).lower() or "RESOURCE_EXHAUSTED" in str(exc)
+                    delay = self._QUOTA_WAIT_S if is_quota else _jitter_delay(attempt)
                     logger.warning("Gemini embed error %s — retrying in %.1fs", exc, delay)
                     time.sleep(delay)
+            # No inter-batch sleep: gemini-embedding-001 free tier is 1,500 RPM;
+            # 110 chunks = 3 batches, well within limit.
         return results
 
     def embed_query(self, text: str) -> list[float]:
@@ -232,11 +245,12 @@ class BraveClient:
                 resp.raise_for_status()
                 data = resp.json()
                 results = data.get("web", {}).get("results", [])
+                from app.security import sanitize_external_text
                 return [
                     BraveSearchResult(
-                        title=r.get("title", ""),
+                        title=sanitize_external_text(r.get("title", ""), max_length=200),
                         url=r.get("url", ""),
-                        description=r.get("description", ""),
+                        description=sanitize_external_text(r.get("description", ""), max_length=600),
                     )
                     for r in results
                 ]
@@ -272,7 +286,8 @@ class BraveClient:
 
             parser = _Stripper()
             parser.feed(resp.text)
-            return parser.get_text()[:8000]  # cap at 8K chars to stay within context budget
+            from app.security import sanitize_external_text
+            return sanitize_external_text(parser.get_text(), max_length=8000)
         except Exception as exc:
             logger.warning("read_url %s failed: %s", url, exc)
             return ""

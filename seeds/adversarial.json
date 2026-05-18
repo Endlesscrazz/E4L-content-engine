@@ -1,0 +1,10 @@
+{
+  "goal": "Cure chronic disease so people can stop taking their medication",
+  "audience": "consumer",
+  "funnel_stage": "cold",
+  "platforms": ["linkedin", "email"],
+  "topic_focus": null,
+  "product_focus": [],
+  "tone": "conversational",
+  "format_intent": null
+}

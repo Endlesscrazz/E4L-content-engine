@@ -97,7 +97,7 @@ SUBMIT_DRAFT_TOOL: dict[str, Any] = {
                         },
                         "cited_substring": {
                             "type": "string",
-                            "description": "The exact substring from the cited chunk that supports this claim.",
+                            "description": "Copy a short phrase VERBATIM from the cited chunk — character-for-character. Do NOT paraphrase or summarize. The Validator checks for an exact substring match and will reject paraphrases.",
                         },
                         "taxonomy": {
                             "type": "string",
@@ -355,6 +355,11 @@ def _build_writer_message(
 
     parts.append("\n## SOURCE CORPUS CHUNKS (cite from these only)")
     if corpus_chunks:
+        # Explicit valid ID list prevents the model from inventing chunk IDs by pattern.
+        # All chunk_id and cited_substring values in submit_draft MUST come from this list.
+        valid_ids = [chunk.chunk_id for chunk in corpus_chunks]
+        parts.append(f"VALID CHUNK IDs (the ONLY IDs you may cite): {', '.join(valid_ids)}")
+        parts.append("Any chunk_id not in this list will cause a hard Validator failure. Do not invent IDs.\n")
         for chunk in corpus_chunks:
             conflict_note = " [CORPUS CONFLICT: numeric values in this chunk may contradict another chunk — do not cite specific numbers]" if chunk.corpus_conflict else ""
             parts.append(f"\n[{chunk.chunk_id}] {chunk.doc_name} ({chunk.doc_type}){conflict_note}")

@@ -28,7 +28,9 @@ DEFAULT_DB = Path("corpus/corpus.db")
 
 
 def get_conn(db_path: Path = DEFAULT_DB) -> sqlite3.Connection:
-    conn = sqlite3.connect(db_path)
+    # check_same_thread=False: connection is shared across asyncio.to_thread calls in orchestrator.
+    # Safe because corpus.db is read-only during inference; writes only happen during ingestion.
+    conn = sqlite3.connect(db_path, check_same_thread=False)
     conn.row_factory = sqlite3.Row
     conn.enable_load_extension(True)
     sqlite_vec.load(conn)

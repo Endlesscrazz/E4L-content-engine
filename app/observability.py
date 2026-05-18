@@ -35,7 +35,9 @@ CREATE TABLE IF NOT EXISTS runs (
     start_ts        TEXT NOT NULL,
     end_ts          TEXT,
     total_cost_usd  REAL NOT NULL DEFAULT 0.0,
-    turns_used      INTEGER NOT NULL DEFAULT 0
+    turns_used      INTEGER NOT NULL DEFAULT 0,
+    is_replay       INTEGER NOT NULL DEFAULT 0,
+    replayed_from   TEXT
 );
 
 CREATE TABLE IF NOT EXISTS agent_calls (
@@ -70,10 +72,30 @@ CREATE INDEX IF NOT EXISTS idx_tool_events_trace ON tool_call_events(trace_id);
 def init_obs_db(db_path: Path = DEFAULT_OBS_DB) -> sqlite3.Connection:
     """Create obs.db and return an open connection. Idempotent."""
     db_path.parent.mkdir(parents=True, exist_ok=True)
-    conn = sqlite3.connect(db_path)
+    # WAL mode leaves two sidecar files (obs.db-wal, obs.db-shm). If the main db
+    # is deleted without removing them (e.g. manual "clear history"), SQLite raises
+    # a disk I/O error on the next open. Remove orphaned sidecars preemptively.
+    if not db_path.exists():
+        for suf in ("-wal", "-shm"):
+            (db_path.parent / (db_path.name + suf)).unlink(missing_ok=True)
+    conn = sqlite3.connect(db_path, check_same_thread=False)
     conn.row_factory = sqlite3.Row
+    # WAL mode: readers never block writers and vice versa — necessary for the
+    # asyncio.to_thread write path sharing a connection with the async read path.
+    conn.execute("PRAGMA journal_mode=WAL")
     conn.executescript(_DDL)
     conn.commit()
+    # Migrate: add S7 replay columns if obs.db predates this schema.
+    # ALTER TABLE IF NOT EXISTS is not supported in SQLite 3.x, so we catch OperationalError.
+    for col, defn in [
+        ("is_replay", "INTEGER NOT NULL DEFAULT 0"),
+        ("replayed_from", "TEXT"),
+    ]:
+        try:
+            conn.execute(f"ALTER TABLE runs ADD COLUMN {col} {defn}")
+            conn.commit()
+        except sqlite3.OperationalError:
+            pass  # column already exists
     return conn
 
 
@@ -87,10 +109,18 @@ def write_run_start(conn: sqlite3.Connection, record: RunRecord) -> None:
     try:
         conn.execute(
             """
-            INSERT OR IGNORE INTO runs (trace_id, brief_json, status, start_ts)
-            VALUES (?, ?, ?, ?)
+            INSERT OR IGNORE INTO runs
+              (trace_id, brief_json, status, start_ts, is_replay, replayed_from)
+            VALUES (?, ?, ?, ?, ?, ?)
             """,
-            (record.trace_id, record.brief_json, record.status, record.start_ts),
+            (
+                record.trace_id,
+                record.brief_json,
+                record.status,
+                record.start_ts,
+                int(record.is_replay),
+                record.replayed_from,
+            ),
         )
         conn.commit()
     except Exception as exc:
@@ -169,14 +199,41 @@ def write_tool_event(conn: sqlite3.Connection, event: ToolCallEvent) -> None:
 
 def query_runs(conn: sqlite3.Connection, limit: int = 20) -> list[dict]:
     """Return recent runs as dicts — used by the S6 /runs endpoint."""
+    # Commit clears any implicit transaction so the SELECT sees the latest writes.
+    conn.commit()
     rows = conn.execute(
         "SELECT * FROM runs ORDER BY start_ts DESC LIMIT ?", (limit,)
     ).fetchall()
     return [dict(r) for r in rows]
 
 
+def _summarize_input(input_json: str, max_len: int = 80) -> str:
+    """Extract a readable one-line summary from a tool input JSON blob."""
+    try:
+        data = json.loads(input_json)
+        parts = [f"{k}={str(v)[:40]}" for k, v in list(data.items())[:2] if v]
+        return ("  ".join(parts))[:max_len]
+    except Exception:
+        return input_json[:max_len]
+
+
+def delete_run(conn: sqlite3.Connection, trace_id: str) -> bool:
+    """Delete a run and all its telemetry rows. Returns True if the run existed."""
+    conn.commit()
+    exists = conn.execute("SELECT 1 FROM runs WHERE trace_id=?", (trace_id,)).fetchone()
+    if not exists:
+        return False
+    conn.execute("DELETE FROM tool_call_events WHERE trace_id=?", (trace_id,))
+    conn.execute("DELETE FROM agent_calls WHERE trace_id=?", (trace_id,))
+    conn.execute("DELETE FROM runs WHERE trace_id=?", (trace_id,))
+    conn.commit()
+    return True
+
+
 def query_run_detail(conn: sqlite3.Connection, trace_id: str) -> dict:
-    """Return full trace for a run — used by the S7 replay endpoint."""
+    """Return full per-agent trace for a run — used by S7 detail + replay endpoints."""
+    # Commit clears any implicit transaction so the SELECT sees the latest writes.
+    conn.commit()
     run_row = conn.execute(
         "SELECT * FROM runs WHERE trace_id = ?", (trace_id,)
     ).fetchone()
@@ -194,5 +251,8 @@ def query_run_detail(conn: sqlite3.Connection, trace_id: str) -> dict:
     return {
         "run": dict(run_row),
         "agent_calls": [dict(r) for r in agent_rows],
-        "tool_events": [dict(r) for r in tool_rows],
+        "tool_events": [
+            {**dict(r), "input_summary": _summarize_input(r["input_json"])}
+            for r in tool_rows
+        ],
     }

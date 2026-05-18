@@ -1,0 +1,47 @@
+# Python artifacts
+.venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Env and secrets
+.env
+.env.*
+
+# Generated databases (created at container first-boot)
+corpus/*.db
+corpus/*.sqlite
+
+# Test suite (not needed in prod image)
+tests/
+
+# Git
+.git/
+.gitignore
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+
+# Working docs and artifacts
+context-bridge-*
+eval_retrieval_results.json
+full_output.json
+integration_test_results.json
+targeted_live_test_results.json
+DECISIONS.md
+SESSION_LOG.md
+PROJECT-TASKS.md
+METHODOLOGY.md
+INTERVIEW_EXPLAINER.md
+handoff.md
+loom_script.md
+architecture.md
+
+# Seeds are for host-side curl testing only; not needed inside the container
+seeds/

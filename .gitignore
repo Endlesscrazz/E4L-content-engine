@@ -43,6 +43,7 @@ uv.lock
 *.md
 !README.md
 !architecture.md
+docs/
 
 # Context-bridge artifacts (accidentally ended up in source_docs)
 source_docs/context-bridge-*
@@ -50,3 +51,19 @@ source_docs/context-bridge-*
 # Corpus raw files are committed; generated embeddings/db are not
 corpus/*.db
 corpus/*.sqlite
+# SQLite WAL/SHM sidecars — never commit these; delete obs.db* to clear history
+corpus/*.db-wal
+corpus/*.db-shm
+
+# Run logs and output artifacts
+*.log
+server_*.log
+qa_*.log
+*_results.json
+*.zip
+
+# Claude Code session metadata
+.claude/
+
+# E2E test screenshots — generated artifacts, not source
+tests/screenshots/

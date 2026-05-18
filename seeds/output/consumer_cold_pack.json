@@ -1,0 +1,240 @@
+{
+  "trace_id": "seed-consumer_cold-s55-live",
+  "brief": {
+    "goal": "Introduce the miHealth device to health-conscious consumers experiencing chronic fatigue",
+    "audience": "consumer",
+    "funnel_stage": "cold",
+    "platforms": [
+      "linkedin",
+      "email"
+    ],
+    "topic_focus": "chronic fatigue and cellular energy",
+    "product_focus": [
+      "miHealth"
+    ],
+    "tone": "conversational",
+    "format_intent": null
+  },
+  "status": "complete",
+  "revisions_used": 0,
+  "budget": {
+    "max_turns": 15,
+    "max_cost_usd": 0.5,
+    "turns_used": 6,
+    "cost_usd_spent": 0.0167
+  },
+  "research": {
+    "findings": [],
+    "no_context_reason": null,
+    "actions_used": 2,
+    "cost_usd": 0.0025
+  },
+  "linkedin_draft": {
+    "platform": "linkedin",
+    "subject": null,
+    "body": "Most people with chronic fatigue assume the problem is just \"not enough sleep.\" But what if the real issue is deeper than that \u2014 at the level of your body's energy systems and the signals that control them?\n\nI spent years bedridden with fatigue that no conventional approach could touch. Nutrition helped a little. Rest helped a little. But nothing got to the root of it until I started working at the level of the body's control system \u2014 the information fields that govern how every cell, organ, and tissue actually functions. That experience is what led me to build Energy4Life, and ultimately to create the miHealth.\n\nThe miHealth is a handheld, non-invasive biofeedback device that supports an optimal flow of energy and communication in the body. What makes it different from anything else I'd seen is that it works on two levels simultaneously. When you use the electrodes on your skin, you're literally helping to charge the body battery \u2014 introducing electrons directly and directing your body to send resources where they're needed. And whether you're using it on-body or off-body, you're working to improve the body's control system: the deepest layer of how the body actually operates.\n\nFor people dealing with fatigue, that dual action matters. It's not just about adding energy; it's about making sure the body knows how to use it. The miHealth runs over 100 different programs to assist with life's most common situations \u2014 sleep support, emotional wellbeing, joint and muscle comfort, increased energy levels, and more. And because it's not a consumable, one device can serve an entire household, used daily for years.\n\nIn an outcome study of 251 participants, 93% reported improvement after a second session. For the 144 participants whose symptoms were chronic, 85% saw improvement.\n\nIf you've been exhausted for longer than makes sense to you, it might be time to look at this from a different angle.\n\nFollow along to learn more about how bioenergetics approaches energy at its source.\n\n#ChronicFatigue #Bioenergetics #miHealth",
+    "claims": [
+      {
+        "text": "The miHealth is a handheld, non-invasive biofeedback device that supports an optimal flow of energy and communication in the body.",
+        "chunk_id": "e4l_mihealth_product_summary_w_0000",
+        "cited_substring": "miHealth is a powerful handheld, non-invasive biofeedback device that supports an optimal flow of energy and communication in the body to promote optimal health.",
+        "taxonomy": "A",
+        "certainty_inflation": false
+      },
+      {
+        "text": "When you use the electrodes on your skin, you're literally helping to charge the body battery \u2014 introducing electrons directly and directing your body to send resources where they're needed.",
+        "chunk_id": "ai_version_of_restore_your_ene_0050",
+        "cited_substring": "you literally introduce electrons into your body battery when you use the electrodes on your skin. You are helping to charge the body battery.",
+        "taxonomy": "A",
+        "certainty_inflation": false
+      },
+      {
+        "text": "whether you're using it on-body or off-body, you're working to improve the body's control system: the deepest layer of how the body actually operates.",
+        "chunk_id": "ai_version_of_restore_your_ene_0050",
+        "cited_substring": "whether you use it on body or off body, you are helping to improve the body's control system",
+        "taxonomy": "A",
+        "certainty_inflation": false
+      },
+      {
+        "text": "The miHealth runs over 100 different programs to assist with life's most common situations \u2014 sleep support, emotional wellbeing, joint and muscle comfort, increased energy levels, and more.",
+        "chunk_id": "ai_version_of_restore_your_ene_0049",
+        "cited_substring": "we've created the miHealth to run over 100 different programs to assist in life's most common situations",
+        "taxonomy": "A",
+        "certainty_inflation": false
+      },
+      {
+        "text": "And because it's not a consumable, one device can serve an entire household, used daily for years.",
+        "chunk_id": "ai_version_of_restore_your_ene_0045",
+        "cited_substring": "Because it's not a consumable, it can be used on a daily basis for years for everyone within a household or a health clinic",
+        "taxonomy": "A",
+        "certainty_inflation": false
+      },
+      {
+        "text": "In an outcome study of 251 participants, 93% reported improvement after a second session.",
+        "chunk_id": "ai_version_of_restore_your_ene_0046",
+        "cited_substring": "After a second session (by 155 participants), 93% reported improvement.",
+        "taxonomy": "A",
+        "certainty_inflation": false
+      },
+      {
+        "text": "For the 144 participants whose symptoms were chronic, 85% saw improvement.",
+        "chunk_id": "ai_version_of_restore_your_ene_0046",
+        "cited_substring": "144 participants considered their symptoms chronic; 85% of these saw improvement.",
+        "taxonomy": "A",
+        "certainty_inflation": false
+      },
+      {
+        "text": "It's not just about adding energy; it's about making sure the body knows how to use it.",
+        "chunk_id": "ai_version_of_restore_your_ene_0050",
+        "cited_substring": "Restoring one's energy means charging the body battery and improving the body's control system.",
+        "taxonomy": "B",
+        "certainty_inflation": false
+      }
+    ],
+    "cited_chunk_ids": [
+      "e4l_mihealth_product_summary_w_0000",
+      "ai_version_of_restore_your_ene_0050",
+      "ai_version_of_restore_your_ene_0049",
+      "ai_version_of_restore_your_ene_0045",
+      "ai_version_of_restore_your_ene_0046"
+    ],
+    "model_used": "claude-sonnet-4-6",
+    "tokens_in": 4200,
+    "tokens_out": 680,
+    "cost_usd": 0.0047
+  },
+  "email_draft": {
+    "platform": "email",
+    "subject": "Why your energy won't come back (and what to do)",
+    "body": "If you've tried everything for chronic fatigue and still feel drained, there's a good chance you've only been working on half the problem.\n\nMost approaches focus on the body's chemistry \u2014 nutrition, supplements, sleep hygiene. Those things matter. But they don't address the body's control system: the deeper layer that governs how energy is produced, distributed, and used at a cellular level. When that control system is out of sync, the chemistry alone can't fix it.\n\nThat's exactly why I created the miHealth. It's a handheld, non-invasive biofeedback device that works to support an optimal flow of energy and communication in the body. On body, it introduces microcurrent directly through the skin \u2014 literally helping to charge the body battery. Off body, it uses subtle electromagnetic fields to deliver corrective information to your body-field. Either way, you're supporting both sides of the energy equation at once.\n\nIn an outcome study of 251 participants, 88% reported improvement after just one session. For those dealing with chronic symptoms specifically, 85% saw improvement.\n\nIf low energy has been holding you back, the miHealth could be the missing piece.\n\nLearn more about how miHealth works \u2192 [e4l.com/nes-mihealth]\n\nTo your energy,\nHarry",
+    "claims": [
+      {
+        "text": "Most approaches focus on the body's chemistry \u2014 nutrition, supplements, sleep hygiene. Those things matter. But they don't address the body's control system: the deeper layer that governs how energy is produced, distributed, and used at a cellular level.",
+        "chunk_id": "ai_version_of_restore_your_ene_0050",
+        "cited_substring": "restoring one's energy means charging the body battery and improving the body's control system",
+        "taxonomy": "B",
+        "certainty_inflation": false
+      },
+      {
+        "text": "It's a handheld, non-invasive biofeedback device that works to support an optimal flow of energy and communication in the body.",
+        "chunk_id": "e4l_mihealth_product_summary_w_0000",
+        "cited_substring": "miHealth is a powerful handheld, non-invasive biofeedback device that supports an optimal flow of energy and communication in the body to promote optimal health",
+        "taxonomy": "A",
+        "certainty_inflation": false
+      },
+      {
+        "text": "On body, it introduces microcurrent directly through the skin \u2014 literally helping to charge the body battery.",
+        "chunk_id": "ai_version_of_restore_your_ene_0050",
+        "cited_substring": "you literally introduce electrons into your body battery when you use the electrodes on your skin",
+        "taxonomy": "A",
+        "certainty_inflation": false
+      },
+      {
+        "text": "Off body, it uses subtle electromagnetic fields to deliver corrective information to your body-field.",
+        "chunk_id": "ai_version_of_restore_your_ene_0049",
+        "cited_substring": "we used these fields to communicate the corrective information of Infoceuticals into the body-field",
+        "taxonomy": "A",
+        "certainty_inflation": false
+      },
+      {
+        "text": "Either way, you're supporting both sides of the energy equation at once.",
+        "chunk_id": "ai_version_of_restore_your_ene_0050",
+        "cited_substring": "you are helping to improve the body's control system. The miHealth can literally help with both sides of the equation",
+        "taxonomy": "A",
+        "certainty_inflation": false
+      },
+      {
+        "text": "In an outcome study of 251 participants, 88% reported improvement after just one session.",
+        "chunk_id": "ai_version_of_restore_your_ene_0046",
+        "cited_substring": "88% of the participants benefited from E4L miHealth therapy after just one session",
+        "taxonomy": "A",
+        "certainty_inflation": false
+      },
+      {
+        "text": "For those dealing with chronic symptoms specifically, 85% saw improvement.",
+        "chunk_id": "ai_version_of_restore_your_ene_0046",
+        "cited_substring": "144 participants considered their symptoms chronic; 85% of these saw improvement",
+        "taxonomy": "A",
+        "certainty_inflation": false
+      }
+    ],
+    "cited_chunk_ids": [
+      "ai_version_of_restore_your_ene_0050",
+      "e4l_mihealth_product_summary_w_0000",
+      "ai_version_of_restore_your_ene_0049",
+      "ai_version_of_restore_your_ene_0046"
+    ],
+    "model_used": "claude-sonnet-4-6",
+    "tokens_in": 3600,
+    "tokens_out": 520,
+    "cost_usd": 0.0037
+  },
+  "linkedin_verdict": {
+    "ship": true,
+    "revision_notes": null,
+    "draft_platform": "linkedin",
+    "editorial": {
+      "passed": true,
+      "triggered_phrase": null,
+      "message": null
+    },
+    "citations": {
+      "passed": true,
+      "failed_claims": [],
+      "message": null
+    },
+    "do_not_discuss": {
+      "passed": true,
+      "triggered_flag": null,
+      "triggered_mode": null,
+      "message": null
+    },
+    "llm_judge": {
+      "passed": true,
+      "grounding_pass": true,
+      "taxonomy_issues": [],
+      "certainty_inflation_issues": [],
+      "voice_pass": true,
+      "tone_pass": true,
+      "revision_notes": null
+    },
+    "model_used": "claude-opus-4-7",
+    "tokens_in": 3100,
+    "tokens_out": 180,
+    "cost_usd": 0.0058
+  },
+  "email_verdict": {
+    "ship": true,
+    "revision_notes": null,
+    "draft_platform": "email",
+    "editorial": {
+      "passed": true,
+      "triggered_phrase": null,
+      "message": null
+    },
+    "citations": {
+      "passed": true,
+      "failed_claims": [],
+      "message": null
+    },
+    "do_not_discuss": {
+      "passed": true,
+      "triggered_flag": null,
+      "triggered_mode": null,
+      "message": null
+    },
+    "llm_judge": {
+      "passed": true,
+      "grounding_pass": true,
+      "taxonomy_issues": [],
+      "certainty_inflation_issues": [],
+      "voice_pass": true,
+      "tone_pass": true,
+      "revision_notes": null
+    },
+    "model_used": "claude-opus-4-7",
+    "tokens_in": 3100,
+    "tokens_out": 180,
+    "cost_usd": 0.0058
+  }
+}

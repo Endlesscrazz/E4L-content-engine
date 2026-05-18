@@ -1,0 +1,22 @@
+{
+  "brief": {
+    "goal": "Tell the story of how E4L was founded \u2014 how Peter Fraser's decades of bioenergetics research and Harry Massey's personal health journey led them to build NES Health together",
+    "audience": "consumer",
+    "funnel_stage": "cold",
+    "platforms": [
+      "linkedin",
+      "email"
+    ],
+    "topic_focus": "Peter Fraser founding story",
+    "product_focus": [],
+    "tone": "conversational",
+    "format_intent": null
+  },
+  "trace_id": "pf_r1_1778988987",
+  "status": "complete",
+  "cost_usd": 0.009922,
+  "turns_used": 4,
+  "death_terms_found": [],
+  "linkedin_body_preview": "What if the technology that changed how thousands of people think about their health was born out of one person's desperate search to simply get out of bed?\n\nThat's the real story behind Energy4Life.\n\nAbout 25 years ago, I found myself bedridden, completely depleted, and running out of options. I had tried modern medicine and nearly every alternative approach imaginable. Nothing worked. So I started studying energy, because energy was exactly what I had lost. That search led me to the work of Pr",
+  "email_subject": "How a chance meeting changed everything for us"
+}

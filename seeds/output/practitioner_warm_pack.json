@@ -1,0 +1,256 @@
+{
+  "trace_id": "seed-practitioner_warm-s55-live",
+  "brief": {
+    "goal": "Educate biofeedback practitioners on the miHealth's clinical differentiation and BWS integration",
+    "audience": "practitioner",
+    "funnel_stage": "warm",
+    "platforms": [
+      "linkedin",
+      "email"
+    ],
+    "topic_focus": "bioenergetic assessment and miHealth clinical protocols",
+    "product_focus": [
+      "miHealth",
+      "BWS"
+    ],
+    "tone": "educational",
+    "format_intent": null
+  },
+  "status": "complete",
+  "revisions_used": 0,
+  "budget": {
+    "max_turns": 15,
+    "max_cost_usd": 0.5,
+    "turns_used": 5,
+    "cost_usd_spent": 0.0151
+  },
+  "research": {
+    "findings": [],
+    "no_context_reason": null,
+    "actions_used": 2,
+    "cost_usd": 0.0023
+  },
+  "linkedin_draft": {
+    "platform": "linkedin",
+    "subject": null,
+    "body": "Most biofeedback tools measure. The miHealth does something more \u2014 it responds.\n\nAs practitioners, we're always looking for tools that don't just generate data but actually support the body's ability to move toward a better state. That's precisely where the miHealth sits in our work at Energy4Life.\n\nThe miHealth is a handheld, non-invasive biofeedback device that combines microcurrent therapy, photobiomodulation, magnetic therapy, and pulse wave technology into a single clinical tool. What makes it genuinely different is that the microcurrent adjusts in real-time to the body, indicating areas that may need support \u2014 rather than delivering a fixed, one-size-fits-all output. The frequency patterns driving each session are built on E4L's proprietary Infoceutical technology, which means the information being delivered is grounded in the body-field model we've spent decades developing.\n\nIn practice, the device works both in dedicated on-body sessions using electrodes and off-body in a more casual application \u2014 which gives practitioners real flexibility in how they integrate it into existing protocols. Clients commonly report support for joint and muscle mobility, improved sleep patterns, increased energy levels, and feelings of relaxation. These aren't incidental \u2014 they reflect the range of programs built into the device, from Rehab and Wellness settings through to Organ & Systems support and even environmental resilience settings.\n\nThe research behind this matters too. In an outcome study of 251 subjects, 88% of participants benefited from miHealth therapy at the initial consultation \u2014 and that positive effect compounded across the second and third sessions, showing an increasing trend toward wellness. A separate study also assessed the miHealth's Mind functions as an adjunct tool for resolving conflict shocks, with results showing improvement across all variables, particularly for emotional and digestion issues.\n\nFor practitioners building a bioenergetic practice, the miHealth integrates directly with the Bioenergetic Wellness System (BWS), which generates personalized miHealth settings based on each client's scan results. That connection between assessment and targeted support is what makes the whole system coherent \u2014 not just a collection of tools, but a complete approach.\n\nIf you're exploring how bioenergetics can deepen what you offer your clients, I'd welcome the conversation. Book a discovery session with our team to see the miHealth in context.\n\n#Bioenergetics #ClinicalBiofeedback #IntegrativePractitioner",
+    "claims": [
+      {
+        "text": "The miHealth is a handheld, non-invasive biofeedback device that combines microcurrent therapy, photobiomodulation, magnetic therapy, and pulse wave technology into a single clinical tool.",
+        "chunk_id": "e4l_mihealth_product_summary_w_0000",
+        "cited_substring": "miHealth combines several key technologies",
+        "taxonomy": "A",
+        "certainty_inflation": false
+      },
+      {
+        "text": "the microcurrent adjusts in real-time to the body, indicating areas that may need support",
+        "chunk_id": "e4l_mihealth_product_summary_w_0000",
+        "cited_substring": "Microcurrent therapy that adjusts in real-time to the body and indicates areas needing support.",
+        "taxonomy": "A",
+        "certainty_inflation": false
+      },
+      {
+        "text": "The frequency patterns driving each session are built on E4L's proprietary Infoceutical technology",
+        "chunk_id": "e4l_mihealth_product_summary_w_0000",
+        "cited_substring": "The frequency patterns themselves are E4L's proprietary Infoceutical technology.",
+        "taxonomy": "A",
+        "certainty_inflation": false
+      },
+      {
+        "text": "the device works both in dedicated on-body sessions using electrodes and off-body in a more casual application",
+        "chunk_id": "e4l_mihealth_product_summary_w_0001",
+        "cited_substring": "used in dedicated \"on body\" sessions, or used casually \"off body\" at any time.",
+        "taxonomy": "A",
+        "certainty_inflation": false
+      },
+      {
+        "text": "Clients commonly report support for joint and muscle mobility, improved sleep patterns, increased energy levels, and feelings of relaxation.",
+        "chunk_id": "e4l_mihealth_product_summary_w_0001",
+        "cited_substring": "Support for joint and muscle mobility and discomfort",
+        "taxonomy": "A",
+        "certainty_inflation": false
+      },
+      {
+        "text": "the range of programs built into the device, from Rehab and Wellness settings through to Organ & Systems support and even environmental resilience settings",
+        "chunk_id": "e4l_mihealth_product_summary_w_0002",
+        "cited_substring": "Rehab:",
+        "taxonomy": "A",
+        "certainty_inflation": false
+      },
+      {
+        "text": "In an outcome study of 251 subjects, 88% of participants benefited from miHealth therapy at the initial consultation",
+        "chunk_id": "energy4life_research_summary_0002",
+        "cited_substring": "88% of the participants benefited from the E4L miHealth therapy at the initial consultation.",
+        "taxonomy": "A",
+        "certainty_inflation": false
+      },
+      {
+        "text": "that positive effect compounded across the second and third sessions, showing an increasing trend toward wellness",
+        "chunk_id": "energy4life_research_summary_0002",
+        "cited_substring": "the positive effect on general rejuvenation was compounded on the second and third therapy sessions so that the subjects saw an increasing trend toward wellness.",
+        "taxonomy": "A",
+        "certainty_inflation": false
+      },
+      {
+        "text": "A separate study also assessed the miHealth's Mind functions as an adjunct tool for resolving conflict shocks, with results showing improvement across all variables, particularly for emotional and digestion issues.",
+        "chunk_id": "energy4life_research_summary_0008",
+        "cited_substring": "Results showed that, for all variables, an improvement in main presenting issue was obtained. The greatest difference in scores was seen for Emotional issues and Digestion issues.",
+        "taxonomy": "A",
+        "certainty_inflation": false
+      },
+      {
+        "text": "the miHealth integrates directly with the Bioenergetic Wellness System (BWS), which generates personalized miHealth settings based on each client's scan results",
+        "chunk_id": "bioenergetic_wellness_system_b_0000",
+        "cited_substring": "a practitioner can immediately look at the Recommendations screen to see a personalized protocol of Infoceuticals and miHealth settings to provide the needed support.",
+        "taxonomy": "A",
+        "certainty_inflation": false
+      }
+    ],
+    "cited_chunk_ids": [
+      "e4l_mihealth_product_summary_w_0000",
+      "e4l_mihealth_product_summary_w_0001",
+      "e4l_mihealth_product_summary_w_0002",
+      "energy4life_research_summary_0002",
+      "energy4life_research_summary_0008",
+      "bioenergetic_wellness_system_b_0000"
+    ],
+    "model_used": "claude-sonnet-4-6",
+    "tokens_in": 4200,
+    "tokens_out": 680,
+    "cost_usd": 0.0042
+  },
+  "email_draft": {
+    "platform": "email",
+    "subject": "A non-invasive biofeedback device built for clinical practice",
+    "body": "If you're looking for a biofeedback tool that goes deeper than standard devices, miHealth is worth your attention.\n\nmiHealth is a handheld, non-invasive biofeedback device that combines microcurrent therapy, photobiomodulation, magnetic therapy, and pulse wave technology \u2014 all in one clinical tool. The microcurrent adjusts in real-time to the body and indicates areas needing support. Pulse wave technology, inspired by traditional Chinese medicine, shows where organ balancing is needed and supports that balance. These technologies work together to help direct the body toward its optimal state.\n\nFor your clients, on-body sessions deliver a gentle, relaxing experience while supporting joint and muscle mobility, sleep patterns, energy levels, and emotional wellbeing. The device also integrates directly with E4L's Bioenergetic Wellness System \u2014 so after a scan, practitioners receive personalised miHealth settings as part of a recommended protocol. In our outcome study of 251 subjects, 88% of participants benefited from miHealth therapy at the initial consultation, with positive effects compounding across subsequent sessions.\n\nIf you'd like to explore how miHealth fits into your practice, book a free session with our team.\n\nTo your energy,\nHarry",
+    "claims": [
+      {
+        "text": "miHealth is a handheld, non-invasive biofeedback device that combines microcurrent therapy, photobiomodulation, magnetic therapy, and pulse wave technology \u2014 all in one clinical tool.",
+        "chunk_id": "e4l_mihealth_product_summary_w_0000",
+        "cited_substring": "miHealth is a powerful handheld, non-invasive biofeedback device that supports an optimal flow of energy and communication in the body to promote optimal health.",
+        "taxonomy": "A",
+        "certainty_inflation": false
+      },
+      {
+        "text": "The microcurrent adjusts in real-time to the body and indicates areas needing support.",
+        "chunk_id": "e4l_mihealth_product_summary_w_0000",
+        "cited_substring": "Microcurrent therapy that adjusts in real-time to the body and indicates areas needing support.",
+        "taxonomy": "A",
+        "certainty_inflation": false
+      },
+      {
+        "text": "Pulse wave technology, inspired by traditional Chinese medicine, shows where organ balancing is needed and supports that balance.",
+        "chunk_id": "e4l_mihealth_product_summary_w_0000",
+        "cited_substring": "Pulse wave technology, inspired by traditional Chinese medicine, showing where organ balancing is needed and supporting that balance.",
+        "taxonomy": "A",
+        "certainty_inflation": false
+      },
+      {
+        "text": "These technologies work together to help direct the body toward its optimal state.",
+        "chunk_id": "e4l_mihealth_product_summary_w_0000",
+        "cited_substring": "frequency patterns directing the body toward its optimal state",
+        "taxonomy": "A",
+        "certainty_inflation": false
+      },
+      {
+        "text": "on-body sessions deliver a gentle, relaxing experience while supporting joint and muscle mobility, sleep patterns, energy levels, and emotional wellbeing.",
+        "chunk_id": "e4l_mihealth_product_summary_w_0001",
+        "cited_substring": "On body sessions with the electrodes provide a gentle and relaxing or uplifting sensation as the body is directed to send resources to an area needing support.",
+        "taxonomy": "A",
+        "certainty_inflation": false
+      },
+      {
+        "text": "The device also integrates directly with E4L's Bioenergetic Wellness System \u2014 so after a scan, practitioners receive personalised miHealth settings as part of a recommended protocol.",
+        "chunk_id": "bioenergetic_wellness_system_b_0000",
+        "cited_substring": "a practitioner can immediately look at the Recommendations screen to see a personalized protocol of Infoceuticals and miHealth settings to provide the needed support.",
+        "taxonomy": "B",
+        "certainty_inflation": false
+      },
+      {
+        "text": "In our outcome study of 251 subjects, 88% of participants benefited from miHealth therapy at the initial consultation, with positive effects compounding across subsequent sessions.",
+        "chunk_id": "energy4life_research_summary_0002",
+        "cited_substring": "88% of the participants benefited from the E4L miHealth therapy at the initial consultation.",
+        "taxonomy": "A",
+        "certainty_inflation": false
+      }
+    ],
+    "cited_chunk_ids": [
+      "e4l_mihealth_product_summary_w_0000",
+      "e4l_mihealth_product_summary_w_0001",
+      "bioenergetic_wellness_system_b_0000",
+      "energy4life_research_summary_0002"
+    ],
+    "model_used": "claude-sonnet-4-6",
+    "tokens_in": 3600,
+    "tokens_out": 520,
+    "cost_usd": 0.0033
+  },
+  "linkedin_verdict": {
+    "ship": true,
+    "revision_notes": null,
+    "draft_platform": "linkedin",
+    "editorial": {
+      "passed": true,
+      "triggered_phrase": null,
+      "message": null
+    },
+    "citations": {
+      "passed": true,
+      "failed_claims": [],
+      "message": null
+    },
+    "do_not_discuss": {
+      "passed": true,
+      "triggered_flag": null,
+      "triggered_mode": null,
+      "message": null
+    },
+    "llm_judge": {
+      "passed": true,
+      "grounding_pass": true,
+      "taxonomy_issues": [],
+      "certainty_inflation_issues": [],
+      "voice_pass": true,
+      "tone_pass": true,
+      "revision_notes": null
+    },
+    "model_used": "claude-opus-4-7",
+    "tokens_in": 3100,
+    "tokens_out": 180,
+    "cost_usd": 0.0053
+  },
+  "email_verdict": {
+    "ship": true,
+    "revision_notes": null,
+    "draft_platform": "email",
+    "editorial": {
+      "passed": true,
+      "triggered_phrase": null,
+      "message": null
+    },
+    "citations": {
+      "passed": true,
+      "failed_claims": [],
+      "message": null
+    },
+    "do_not_discuss": {
+      "passed": true,
+      "triggered_flag": null,
+      "triggered_mode": null,
+      "message": null
+    },
+    "llm_judge": {
+      "passed": true,
+      "grounding_pass": true,
+      "taxonomy_issues": [],
+      "certainty_inflation_issues": [],
+      "voice_pass": true,
+      "tone_pass": true,
+      "revision_notes": null
+    },
+    "model_used": "claude-opus-4-7",
+    "tokens_in": 3100,
+    "tokens_out": 180,
+    "cost_usd": 0.0053
+  }
+}

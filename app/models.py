@@ -8,7 +8,7 @@ from __future__ import annotations
 from enum import Enum
 from typing import Literal
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 
 
 # ─── Enums ────────────────────────────────────────────────────────────────────
@@ -78,6 +78,28 @@ class ContentBrief(BaseModel):
         default=None,
         description="Optional structural hint (e.g. 'story-first', 'research-led').",
     )
+
+    @field_validator("goal", "topic_focus", "format_intent", mode="before")
+    @classmethod
+    def _sanitize_and_guard(cls, v: str | None) -> str | None:
+        if v is None:
+            return v
+        from app.security import contains_injection, sanitize_user_text
+        v = sanitize_user_text(v, max_length=500)
+        if contains_injection(v):
+            raise ValueError(
+                "Input contains disallowed patterns. "
+                "Please describe your content goal in plain language."
+            )
+        return v
+
+    @field_validator("product_focus", mode="before")
+    @classmethod
+    def _sanitize_product_focus(cls, v: list) -> list:
+        if not v:
+            return v
+        from app.security import sanitize_user_text
+        return [sanitize_user_text(item, max_length=100) for item in v]
 
 
 # ─── Corpus types ─────────────────────────────────────────────────────────────
@@ -305,6 +327,7 @@ class ContentPack(BaseModel):
     email_verdict: ValidatorVerdict | None = None
     revisions_used: int = 0
     status: Literal["complete", "partial", "cap_hit", "refused"] = "complete"
+    finalize_reason: str | None = None
     budget: RunBudget
     research: ResearchResult | None = None
 
@@ -321,6 +344,8 @@ class RunRecord(BaseModel):
     end_ts: str | None = None
     total_cost_usd: float = 0.0
     turns_used: int = 0
+    is_replay: bool = False
+    replayed_from: str | None = None
 
 
 class ToolCallEvent(BaseModel):

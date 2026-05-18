@@ -1,0 +1,13 @@
+services:
+  e4l-content-engine:
+    build:
+      context: .
+      platforms:
+        - linux/amd64
+    ports:
+      - "8000:8000"
+    env_file:
+      - .env
+    # corpus.db is generated on first boot inside the container.
+    # Use `docker compose stop` (not `down`) to preserve it between sessions.
+    # Re-running `docker compose up --build` triggers a fresh ingest.

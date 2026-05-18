@@ -1,0 +1,10 @@
+{
+  "goal": "Introduce the miHealth device to health-conscious consumers experiencing chronic fatigue",
+  "audience": "consumer",
+  "funnel_stage": "cold",
+  "platforms": ["linkedin", "email"],
+  "topic_focus": "chronic fatigue and cellular energy",
+  "product_focus": ["miHealth"],
+  "tone": "conversational",
+  "format_intent": null
+}

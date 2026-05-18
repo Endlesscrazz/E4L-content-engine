@@ -1,0 +1,2184 @@
+<!doctype html>
+<html lang="en" class="theme-light skin-tech">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>E4L Content Engine</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>⚡</text></svg>">
+
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet">
+
+  <!-- Tailwind play CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: ['class', '.theme-dark'],
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['IBM Plex Sans', 'ui-sans-serif', 'system-ui'],
+            mono: ['IBM Plex Mono', 'ui-monospace', 'Menlo'],
+            serif: ['Instrument Serif', 'ui-serif']
+          }
+        }
+      }
+    }
+  </script>
+
+  <!-- Alpine.js plugins must load before Alpine core -->
+  <script defer src="https://cdn.jsdelivr.net/npm/@alpinejs/collapse@3.x.x/dist/cdn.min.js"></script>
+  <script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>
+
+  <style>
+    /* =========================================================================
+       Theme tokens. Skin = aesthetic preset. Theme = light/dark. Tokens drive
+       background, surface, border, text, accent. Skins re-map these tokens.
+       ========================================================================= */
+    :root {
+      --bg:        #f7f7f5;
+      --bg-2:      #efefec;
+      --surface:   #ffffff;
+      --surface-2: #fafaf9;
+      --border:    #e5e5e2;
+      --border-2:  #d6d6d2;
+      --text:      #18181a;
+      --text-2:    #59595c;
+      --text-3:    #8a8a8d;
+      --accent:    #4f46e5;    /* indigo-600 */
+      --accent-2:  #4338ca;    /* indigo-700 */
+      --accent-soft: #eef2ff;
+      --accent-text: #3730a3;
+
+      --ok:    #16a34a;
+      --ok-soft: #dcfce7;
+      --ok-text: #166534;
+      --warn:  #d97706;
+      --warn-soft: #fef3c7;
+      --warn-text: #92400e;
+      --err:   #dc2626;
+      --err-soft: #fee2e2;
+      --err-text: #991b1b;
+
+      --radius: 6px;
+      --radius-lg: 10px;
+      --shadow-sm: 0 1px 0 rgba(0,0,0,0.02), 0 1px 2px rgba(0,0,0,0.04);
+      --shadow-md: 0 1px 0 rgba(0,0,0,0.03), 0 4px 16px -4px rgba(0,0,0,0.08);
+
+      --font-body: 'IBM Plex Sans', ui-sans-serif, system-ui, sans-serif;
+      --font-mono: 'IBM Plex Mono', ui-monospace, Menlo, monospace;
+      --font-display: 'IBM Plex Sans', ui-sans-serif, system-ui, sans-serif;
+    }
+
+    .theme-dark {
+      --bg:        #0c0c0d;
+      --bg-2:      #131316;
+      --surface:   #161618;
+      --surface-2: #1c1c20;
+      --border:    #26262a;
+      --border-2:  #34343a;
+      --text:      #f0f0f0;
+      --text-2:    #a4a4a8;
+      --text-3:    #6d6d72;
+      --accent:    #818cf8;
+      --accent-2:  #a5b4fc;
+      --accent-soft: #1e1b3a;
+      --accent-text: #c7d2fe;
+
+      --ok:    #4ade80;
+      --ok-soft: #052e16;
+      --ok-text: #86efac;
+      --warn:  #fbbf24;
+      --warn-soft: #2b1d05;
+      --warn-text: #fcd34d;
+      --err:   #f87171;
+      --err-soft: #2b0d0d;
+      --err-text: #fca5a5;
+
+      --shadow-sm: 0 1px 0 rgba(0,0,0,0.4), 0 1px 2px rgba(0,0,0,0.4);
+      --shadow-md: 0 1px 0 rgba(0,0,0,0.5), 0 4px 16px -4px rgba(0,0,0,0.4);
+    }
+
+    /* Skin: clean (rounded, generous, SaaS-feel) */
+    .skin-clean { --radius: 10px; --radius-lg: 14px; }
+    .skin-clean.theme-light { --bg: #fafafa; --bg-2: #f4f4f5; }
+
+    /* Skin: editorial (serif headings, warmer tone) */
+    .skin-editorial { --font-display: 'Instrument Serif', ui-serif, serif; }
+    .skin-editorial.theme-light {
+      --bg: #f6f3ed; --bg-2: #efeae0; --surface: #fbf9f4; --surface-2: #f5f1e8;
+      --border: #e6dfd1; --border-2: #d6cdb8; --text: #1a1815; --text-2: #5a554c;
+      --accent: #6b4f2a; --accent-2: #5a4023; --accent-soft: #efe5d2; --accent-text: #4a3520;
+    }
+    .skin-editorial.theme-dark {
+      --bg: #14110d; --bg-2: #1a1612; --surface: #1d1915; --surface-2: #25201b;
+      --accent: #d4a373; --accent-2: #e6c397; --accent-soft: #2a221a; --accent-text: #e8c89c;
+    }
+
+    html, body { height: 100%; }
+    body {
+      margin: 0;
+      font-family: var(--font-body);
+      background: var(--bg);
+      color: var(--text);
+      font-feature-settings: "ss01","cv11";
+      -webkit-font-smoothing: antialiased;
+    }
+
+    .font-display { font-family: var(--font-display); }
+
+    /* utility classes that map tailwind-ish hooks onto tokens */
+    .bg-app      { background: var(--bg); }
+    .bg-app-2    { background: var(--bg-2); }
+    .bg-surface  { background: var(--surface); }
+    .bg-surface-2{ background: var(--surface-2); }
+    .text-fg     { color: var(--text); }
+    .text-fg-2   { color: var(--text-2); }
+    .text-fg-3   { color: var(--text-3); }
+    .border-app  { border-color: var(--border); }
+    .border-app-2{ border-color: var(--border-2); }
+    .text-accent { color: var(--accent); }
+    .bg-accent   { background: var(--accent); }
+    .bg-accent:hover { background: var(--accent-2); }
+    .ring-accent { box-shadow: 0 0 0 3px color-mix(in oklab, var(--accent) 25%, transparent); }
+    .shadow-card { box-shadow: var(--shadow-sm); }
+    .shadow-pop  { box-shadow: var(--shadow-md); }
+
+    /* Scrollbars */
+    ::-webkit-scrollbar { width: 10px; height: 10px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: var(--border-2); border-radius: 8px; border: 2px solid var(--bg); }
+    ::-webkit-scrollbar-thumb:hover { background: var(--text-3); }
+
+    /* selection */
+    ::selection { background: color-mix(in oklab, var(--accent) 30%, transparent); }
+
+    /* Event log */
+    .log-line { font-family: var(--font-mono); font-size: 12px; line-height: 1.65; }
+    .log-line .ts { color: var(--text-3); }
+    .log-line .ico { display: inline-block; width: 12px; text-align: center; }
+
+    /* Pulsing dot for in-flight agents */
+    .pulse-dot {
+      width: 8px; height: 8px; border-radius: 50%;
+      background: var(--accent);
+      box-shadow: 0 0 0 0 color-mix(in oklab, var(--accent) 60%, transparent);
+      animation: pulse 1.4s infinite cubic-bezier(0.4,0,0.6,1);
+    }
+    @keyframes pulse {
+      0%   { box-shadow: 0 0 0 0 color-mix(in oklab, var(--accent) 60%, transparent); }
+      70%  { box-shadow: 0 0 0 10px transparent; }
+      100% { box-shadow: 0 0 0 0 transparent; }
+    }
+
+    /* Sweeping bar while running */
+    .sweep {
+      position: relative; overflow: hidden;
+      background: var(--surface-2);
+    }
+    .sweep::after {
+      content:''; position:absolute; inset:0;
+      background: linear-gradient(90deg, transparent, color-mix(in oklab, var(--accent) 18%, transparent), transparent);
+      animation: sweep 1.6s linear infinite;
+    }
+    @keyframes sweep { 0%{transform:translateX(-100%);} 100%{transform:translateX(100%);} }
+
+    /* Citation chip */
+    .chip {
+      display: inline-flex; align-items: center; gap: 4px;
+      font-family: var(--font-mono); font-size: 11px;
+      padding: 1px 6px; border-radius: 4px; border: 1px solid var(--border);
+      background: var(--surface-2); color: var(--text-2);
+      cursor: pointer; transition: all 0.12s;
+    }
+    .chip:hover { color: var(--accent); border-color: var(--accent); background: var(--accent-soft); }
+
+    /* Tab underline */
+    .tab { position: relative; padding: 10px 2px; cursor: pointer; color: var(--text-2); font-weight: 500; font-size: 13px; letter-spacing: 0.01em; }
+    .tab.active { color: var(--text); }
+    .tab.active::after {
+      content:''; position:absolute; left:0; right:0; bottom:-1px; height:2px;
+      background: var(--accent); border-radius: 1px 1px 0 0;
+    }
+
+    /* Section label */
+    .label { font-size: 10.5px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-3); }
+
+    /* Inputs */
+    .field {
+      width: 100%; padding: 8px 10px; font-size: 13px;
+      background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius);
+      color: var(--text); font-family: inherit;
+      transition: border-color 0.12s, box-shadow 0.12s;
+    }
+    .field:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px color-mix(in oklab, var(--accent) 18%, transparent); }
+    textarea.field { line-height: 1.5; resize: vertical; min-height: 76px; }
+
+    /* Buttons */
+    .btn {
+      display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+      padding: 7px 12px; font-size: 13px; font-weight: 500;
+      border-radius: var(--radius); border: 1px solid var(--border);
+      background: var(--surface); color: var(--text); cursor: pointer;
+      transition: all 0.12s;
+      font-family: inherit;
+    }
+    .btn:hover { border-color: var(--border-2); background: var(--surface-2); }
+    .btn-primary { background: var(--accent); border-color: var(--accent); color: white; }
+    .btn-primary:hover { background: var(--accent-2); border-color: var(--accent-2); }
+    .btn-ghost { background: transparent; border-color: transparent; }
+    .btn-ghost:hover { background: var(--surface-2); }
+    .btn[disabled] { opacity: 0.5; cursor: not-allowed; }
+
+    /* Run history row */
+    .run-row {
+      display: block; width: 100%; text-align: left;
+      padding: 9px 10px; border-radius: var(--radius);
+      border: 1px solid transparent;
+      cursor: pointer; transition: all 0.1s;
+      position: relative;
+    }
+    .run-row:hover { background: var(--surface-2); }
+    .run-row.active { background: var(--accent-soft); border-color: color-mix(in oklab, var(--accent) 30%, transparent); }
+    .run-row .delete-run-btn {
+      position: absolute; top: 6px; right: 6px;
+      opacity: 0; transition: opacity 0.1s;
+      background: transparent; border: none; cursor: pointer;
+      color: var(--fg-3); padding: 2px 4px; border-radius: 3px;
+      font-size: 12px; line-height: 1;
+    }
+    .run-row:hover .delete-run-btn { opacity: 1; }
+    .run-row .delete-run-btn:hover { color: var(--fg); background: var(--surface-3, var(--surface-2)); }
+
+    /* Badge */
+    .badge {
+      display: inline-flex; align-items: center; gap: 4px;
+      font-size: 10.5px; font-weight: 600; font-family: var(--font-mono);
+      padding: 2px 6px; border-radius: 3px; letter-spacing: 0.02em;
+      text-transform: uppercase;
+    }
+    .badge-ok    { background: var(--ok-soft); color: var(--ok-text); }
+    .badge-warn  { background: var(--warn-soft); color: var(--warn-text); }
+    .badge-err   { background: var(--err-soft); color: var(--err-text); }
+    .badge-info  { background: var(--accent-soft); color: var(--accent-text); }
+    .badge-mute  { background: var(--surface-2); color: var(--text-2); border:1px solid var(--border); }
+
+    /* Citation highlight */
+    .hl { background: color-mix(in oklab, #fbbf24 35%, transparent); padding: 1px 2px; border-radius: 2px; }
+    .theme-dark .hl { background: color-mix(in oklab, #fbbf24 25%, transparent); color: inherit; }
+
+    /* Tweaks panel */
+    .tweaks {
+      position: fixed; bottom: 16px; right: 16px; z-index: 60;
+      width: 280px; padding: 14px; border-radius: var(--radius-lg);
+      background: var(--surface); border: 1px solid var(--border);
+      box-shadow: var(--shadow-md);
+      font-size: 12.5px;
+    }
+    .tweaks-row { display: flex; align-items: center; justify-content: space-between; padding: 5px 0; gap: 8px; }
+    .seg { display: inline-flex; padding: 2px; background: var(--surface-2); border: 1px solid var(--border); border-radius: var(--radius); }
+    .seg button { padding: 3px 8px; font-size: 11.5px; border-radius: 4px; border: 0; background: transparent; color: var(--text-2); cursor: pointer; font-family: inherit; }
+    .seg button.on { background: var(--surface); color: var(--text); box-shadow: var(--shadow-sm); }
+
+    /* Compare mode panes */
+    .compare-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    @media (max-width: 1100px) { .compare-grid { grid-template-columns: 1fr; } }
+
+    /* Animations */
+    @keyframes fadein { from{opacity:0; transform: translateY(2px);} to{opacity:1; transform: none;} }
+    .fadein { animation: fadein 0.25s ease both; }
+
+    /* Helper: subtle dotted divider */
+    .dot-divider { background-image: radial-gradient(circle, var(--border-2) 1px, transparent 1px); background-size: 6px 6px; height: 1px; }
+
+    /* Logo mark */
+    .logo {
+      width: 26px; height: 26px; border-radius: 7px;
+      background:
+        radial-gradient(circle at 30% 30%, color-mix(in oklab, var(--accent) 100%, transparent), color-mix(in oklab, var(--accent) 60%, transparent) 70%, transparent 80%),
+        linear-gradient(135deg, var(--accent-2), var(--accent));
+      display: inline-flex; align-items: center; justify-content: center;
+      color: white; font-family: var(--font-mono); font-weight: 600; font-size: 13px;
+      box-shadow: inset 0 1px 0 rgba(255,255,255,0.2);
+    }
+
+    /* Tooltip mini */
+    [data-tip] { position: relative; }
+    [data-tip]:hover::after {
+      content: attr(data-tip); position: absolute; bottom: calc(100% + 6px); left: 50%; transform: translateX(-50%);
+      background: var(--text); color: var(--surface); padding: 4px 7px; border-radius: 4px;
+      font-size: 11px; white-space: nowrap; pointer-events: none; z-index: 70;
+    }
+
+    /* Keep right panel scrollable */
+    .right-panel { overflow-y: auto; }
+  </style>
+</head>
+
+<body x-data="app()" x-init="init()" x-cloak>
+
+  <!-- ============================================ TOP BAR =========================================== -->
+  <header class="border-b border-app bg-surface" style="border-bottom-width:1px">
+    <div class="flex items-center justify-between px-4 h-12">
+      <div class="flex items-center gap-3">
+        <span class="logo">E</span>
+        <div class="flex items-baseline gap-2">
+          <span class="font-display font-semibold text-fg" style="font-size:14px; letter-spacing:-0.01em">E4L Content Engine</span>
+          <span class="text-fg-3 text-xs hidden sm:inline">/ multi-agent content pipeline</span>
+        </div>
+      </div>
+      <div class="flex items-center gap-2">
+        <span x-show="!isRunning && lastRunStatus" class="badge"
+              :class="{
+                'badge-ok': lastRunStatus==='complete',
+                'badge-err': lastRunStatus==='refused',
+                'badge-warn': ['partial','cap_hit'].includes(lastRunStatus)
+              }"
+              x-text="'last run · ' + lastRunStatus"></span>
+        <span x-show="isRunning" class="badge badge-info">
+          <span class="pulse-dot" style="width:6px;height:6px"></span> running
+        </span>
+        <button class="btn btn-ghost" @click="compareMode = !compareMode" :class="{'bg-surface-2': compareMode}" data-tip="Compare two runs side-by-side">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="8" height="16" rx="1"/><rect x="13" y="4" width="8" height="16" rx="1"/></svg>
+          <span x-text="compareMode ? 'Exit compare' : 'Compare'"></span>
+        </button>
+        <button class="btn btn-ghost" @click="toggleTheme()" data-tip="Toggle theme">
+          <svg x-show="theme==='light'" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1 1 11.21 3a7 7 0 0 0 9.79 9.79z"/></svg>
+          <svg x-show="theme==='dark'" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M2 12h2M20 12h2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/></svg>
+        </button>
+        <button class="btn btn-ghost" @click="tweaksOpen = !tweaksOpen" data-tip="Open Tweaks panel">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9 1.65 1.65 0 0 0 4.27 7.18l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9c.36.16.66.42.86.74"/></svg>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- ============================================ LAYOUT =========================================== -->
+  <div class="grid" style="grid-template-columns: 240px minmax(0,1fr) 340px; height: calc(100vh - 48px);">
+
+    <!-- =========== LEFT: RUN HISTORY =========== -->
+    <aside class="border-r border-app bg-surface flex flex-col" style="border-right-width:1px">
+      <div class="px-3 pt-3 pb-2 flex items-center justify-between">
+        <span class="label">Run history</span>
+        <button class="btn btn-ghost text-fg-3 hover:text-fg" style="padding:2px 6px" @click="loadHistory()" data-tip="Refresh">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 4v6h-6M1 20v-6h6"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
+        </button>
+      </div>
+
+      <div class="flex-1 overflow-y-auto px-2 pb-3 space-y-1">
+        <template x-if="runs.length === 0 && !runsLoading">
+          <div class="px-2 py-6 text-center">
+            <div class="text-fg-3" style="font-size:11.5px">No runs yet.</div>
+            <div class="text-fg-3 mt-1" style="font-size:11px">Submit a brief to begin.</div>
+          </div>
+        </template>
+
+        <template x-for="run in runs" :key="run.trace_id">
+          <div class="run-row" :class="{active: traceId===run.trace_id}"
+               @click="compareMode ? toggleCompare(run.trace_id) : loadRun(run.trace_id)">
+            <button class="delete-run-btn" title="Delete run"
+                    @click.stop="deleteRun(run.trace_id)">✕</button>
+            <div class="flex items-center justify-between mb-1">
+              <div class="flex items-center gap-1">
+                <span class="badge"
+                  :class="{
+                    'badge-ok': run.status==='complete',
+                    'badge-err': run.status==='refused',
+                    'badge-warn': ['partial','cap_hit'].includes(run.status),
+                    'badge-info': run.status==='running'
+                  }"
+                  x-text="run.status"></span>
+                <template x-if="run.is_replay">
+                  <span class="badge badge-mute" style="font-size:9.5px">↺ replay</span>
+                </template>
+              </div>
+              <span class="font-mono text-fg-3" style="font-size:10.5px" x-text="formatCost(run.cost_usd)"></span>
+            </div>
+            <div class="text-fg" style="font-size:12px; line-height:1.35; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden;" x-text="run.brief_goal || '—'"></div>
+            <!-- Brief metadata chips -->
+            <div class="flex flex-wrap gap-1 mt-1.5">
+              <template x-if="run.brief_audience">
+                <span class="badge badge-mute" style="font-size:9px; text-transform:capitalize" x-text="run.brief_audience"></span>
+              </template>
+              <template x-if="(run.brief_platforms||[]).length">
+                <span class="badge badge-mute" style="font-size:9px" x-text="(run.brief_platforms||[]).join(' + ')"></span>
+              </template>
+              <template x-if="(run.brief_products||[]).length">
+                <span class="badge badge-info" style="font-size:9px" x-text="(run.brief_products||[]).join(', ')"></span>
+              </template>
+            </div>
+            <div class="flex items-center justify-between mt-1">
+              <span class="font-mono text-fg-3" style="font-size:10px" x-text="relTime(run.timestamp)"></span>
+              <template x-if="compareMode">
+                <span class="font-mono"
+                  :class="compareIds.includes(run.trace_id) ? 'text-accent' : 'text-fg-3'"
+                  style="font-size:10px"
+                  x-text="compareIds.includes(run.trace_id) ? ('· slot ' + (compareIds.indexOf(run.trace_id)+1)) : ''"></span>
+              </template>
+            </div>
+          </div>
+        </template>
+      </div>
+
+      <div class="border-t border-app px-3 py-2 flex items-center justify-between" style="border-top-width:1px">
+        <span class="font-mono text-fg-3" style="font-size:10.5px">
+          <span x-text="runs.length"></span> / 20 runs
+        </span>
+        <span class="font-mono" style="font-size:10.5px"
+              :class="backendOnline ? 'text-fg-2' : 'text-fg-3'">
+          <span x-show="backendOnline" style="color: var(--ok)">●</span>
+          <span x-show="!backendOnline" style="color: var(--warn)">●</span>
+          <span x-text="backendOnline ? 'live' : 'demo'"></span>
+        </span>
+      </div>
+    </aside>
+
+    <!-- =========== CENTER: WORK AREA =========== -->
+    <main class="overflow-y-auto bg-app">
+
+      <!-- =================== COMPARE MODE =================== -->
+      <template x-if="compareMode">
+        <div class="p-4">
+          <div class="flex items-center justify-between mb-3">
+            <div>
+              <div class="font-display font-semibold text-fg" style="font-size:18px; letter-spacing:-0.01em">Compare runs</div>
+              <div class="text-fg-2" style="font-size:12.5px">Pick two runs from the sidebar to diff their outputs side-by-side. Useful for demonstrating audience-driven personalization.</div>
+            </div>
+            <button class="btn" @click="compareIds = []; compareData = [null, null]">Clear</button>
+          </div>
+
+          <div class="compare-grid">
+            <template x-for="(slot, idx) in [0,1]" :key="idx">
+              <div class="bg-surface border border-app rounded shadow-card" style="border-width:1px; min-height: 320px">
+                <template x-if="!compareData[idx]">
+                  <div class="h-full flex flex-col items-center justify-center text-center p-8 text-fg-3">
+                    <div class="font-mono" style="font-size:11px; letter-spacing:0.1em; text-transform:uppercase">Slot <span x-text="idx+1"></span></div>
+                    <div class="mt-2" style="font-size:13px">Click a run in the sidebar to load it here.</div>
+                  </div>
+                </template>
+                <template x-if="compareData[idx]">
+                  <div class="p-4">
+                    <div class="flex items-center justify-between mb-2">
+                      <span class="badge"
+                        :class="{
+                          'badge-ok': compareData[idx].status==='complete',
+                          'badge-err': compareData[idx].status==='refused',
+                          'badge-warn': ['partial','cap_hit'].includes(compareData[idx].status)
+                        }"
+                        x-text="compareData[idx].status"></span>
+                      <span class="font-mono text-fg-3" style="font-size:10.5px" x-text="'$'+(compareData[idx].budget?.cost_usd_spent||0).toFixed(4)"></span>
+                    </div>
+                    <div class="font-display font-semibold text-fg mb-1" style="font-size:14px" x-text="compareData[idx].brief?.goal?.slice(0,80) + (compareData[idx].brief?.goal?.length>80?'…':'')"></div>
+                    <div class="flex flex-wrap gap-1 mb-3">
+                      <span class="badge badge-mute" x-text="compareData[idx].brief?.audience"></span>
+                      <span class="badge badge-mute" x-text="compareData[idx].brief?.funnel_stage"></span>
+                      <span class="badge badge-mute" x-text="compareData[idx].brief?.tone"></span>
+                    </div>
+
+                    <div class="border-t border-app pt-3" style="border-top-width:1px">
+                      <template x-if="compareData[idx].linkedin_draft">
+                        <div>
+                          <div class="label mb-1.5">LinkedIn · <span x-text="(compareData[idx].linkedin_draft?.claims||[]).length"></span> claims</div>
+                          <div class="text-fg" style="font-size:12.5px; line-height:1.55; white-space:pre-wrap;" x-text="(compareData[idx].linkedin_draft?.body||'').slice(0,420) + ((compareData[idx].linkedin_draft?.body||'').length>420?'…':'')"></div>
+                        </div>
+                      </template>
+                      <template x-if="!compareData[idx].linkedin_draft">
+                        <div class="text-fg-3" style="font-size:12.5px">No LinkedIn draft (refused or skipped).</div>
+                      </template>
+                    </div>
+                  </div>
+                </template>
+              </div>
+            </template>
+          </div>
+
+          <!-- Diff insights when both loaded -->
+          <template x-if="compareData[0] && compareData[1]">
+            <div class="mt-4 bg-surface border border-app rounded shadow-card p-4" style="border-width:1px">
+              <div class="label mb-2">Personalization signals</div>
+              <div class="grid grid-cols-3 gap-3" style="font-size:12.5px">
+                <div>
+                  <div class="text-fg-3 mb-0.5" style="font-size:11px">Audience</div>
+                  <div class="font-mono" x-text="(compareData[0].brief?.audience||'—') + '  →  ' + (compareData[1].brief?.audience||'—')"></div>
+                </div>
+                <div>
+                  <div class="text-fg-3 mb-0.5" style="font-size:11px">Unique cited chunks</div>
+                  <div class="font-mono" x-text="uniqueChunkOverlap()"></div>
+                </div>
+                <div>
+                  <div class="text-fg-3 mb-0.5" style="font-size:11px">Cost delta</div>
+                  <div class="font-mono" x-text="costDelta()"></div>
+                </div>
+              </div>
+            </div>
+          </template>
+        </div>
+      </template>
+
+      <!-- =================== NORMAL MODE =================== -->
+      <template x-if="!compareMode">
+        <div class="p-4 space-y-4">
+
+          <!-- ============ BRIEF FORM ============ -->
+          <section class="bg-surface border border-app rounded-lg shadow-card" style="border-width:1px">
+            <button class="w-full flex items-center justify-between px-4 py-2.5"
+                    @click="formCollapsed = !formCollapsed">
+              <div class="flex items-center gap-2">
+                <span class="label">Content brief</span>
+                <span class="text-fg-3" style="font-size:11.5px" x-show="formCollapsed && brief.goal" x-text="'· ' + brief.goal.slice(0,60) + (brief.goal.length>60?'…':'')"></span>
+              </div>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                   :style="formCollapsed ? '' : 'transform: rotate(180deg)'" style="transition: transform 0.15s; color: var(--text-3)">
+                <path d="M6 9l6 6 6-6"/>
+              </svg>
+            </button>
+
+            <div x-show="!formCollapsed" x-collapse class="px-4 pb-4">
+              <div class="dot-divider mb-4"></div>
+
+              <!-- Quick load buttons -->
+              <div class="flex flex-wrap gap-2 mb-4">
+                <span class="label self-center mr-1">Quick load:</span>
+                <button class="btn" style="padding:5px 10px; font-size:12px" @click="loadSeed('consumer_cold')">Consumer · Cold</button>
+                <button class="btn" style="padding:5px 10px; font-size:12px" @click="loadSeed('practitioner_warm')">Practitioner · Warm</button>
+                <button class="btn" style="padding:5px 10px; font-size:12px" @click="loadSeed('adversarial')">Adversarial (refusal demo)</button>
+              </div>
+
+              <div class="grid gap-4" style="grid-template-columns: 1fr">
+                <div>
+                  <label class="label block mb-1.5">Goal <span style="color: var(--err)">*</span></label>
+                  <textarea class="field" rows="2"
+                    placeholder="What should this content achieve? e.g. introduce miHealth to people experiencing chronic fatigue"
+                    x-model="brief.goal"
+                    minlength="5" maxlength="500"></textarea>
+                  <div class="flex items-center justify-between mt-1">
+                    <span class="text-fg-3" style="font-size:10.5px">5–500 chars · grounded against the corpus</span>
+                    <span class="font-mono text-fg-3" style="font-size:10.5px" x-text="(brief.goal||'').length + '/500'"></span>
+                  </div>
+                </div>
+
+                <div class="grid gap-3" style="grid-template-columns: 1fr 1fr 1fr">
+                  <div>
+                    <label class="label block mb-1.5">Audience</label>
+                    <select class="field" x-model="brief.audience">
+                      <option value="consumer">Consumer</option>
+                      <option value="practitioner">Practitioner</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label class="label block mb-1.5">Funnel stage</label>
+                    <select class="field" x-model="brief.funnel_stage">
+                      <option value="cold">Cold · first touch</option>
+                      <option value="warm">Warm · aware</option>
+                      <option value="hot">Hot · ready to buy</option>
+                      <option value="customer">Customer</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label class="label block mb-1.5">Tone</label>
+                    <select class="field" x-model="brief.tone">
+                      <option value="conversational">Conversational</option>
+                      <option value="educational">Educational</option>
+                      <option value="clinical">Clinical</option>
+                      <option value="inspirational">Inspirational</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div class="grid gap-3" style="grid-template-columns: 1fr 1fr">
+                  <div>
+                    <label class="label block mb-1.5">Topic focus <span class="text-fg-3 normal-case" style="letter-spacing:normal; font-weight:400">— optional</span></label>
+                    <input type="text" class="field" placeholder="e.g. chronic fatigue, sleep, stress" x-model="brief.topic_focus">
+                  </div>
+                  <div>
+                    <label class="label block mb-1.5">Product focus <span class="text-fg-3 normal-case" style="letter-spacing:normal; font-weight:400">— optional, comma-separated</span></label>
+                    <input type="text" class="field" placeholder="e.g. miHealth, BWS" x-model="brief.productInput">
+                  </div>
+                </div>
+
+                <div class="grid gap-3" style="grid-template-columns: 1fr 1fr">
+                  <div>
+                    <label class="label block mb-1.5">Platforms</label>
+                    <div class="flex gap-2">
+                      <label class="btn flex-1" :class="brief.platforms.includes('linkedin') ? 'btn-primary' : ''" style="cursor:pointer">
+                        <input type="checkbox" value="linkedin" x-model="brief.platforms" style="display:none">
+                        LinkedIn
+                      </label>
+                      <label class="btn flex-1" :class="brief.platforms.includes('email') ? 'btn-primary' : ''" style="cursor:pointer">
+                        <input type="checkbox" value="email" x-model="brief.platforms" style="display:none">
+                        Email
+                      </label>
+                    </div>
+                  </div>
+                  <div>
+                    <label class="label block mb-1.5">Format intent <span class="text-fg-3 normal-case" style="letter-spacing:normal; font-weight:400">— optional</span></label>
+                    <input type="text" class="field" placeholder="e.g. listicle, narrative, FAQ" x-model="brief.format_intent">
+                  </div>
+                </div>
+
+                <div class="flex items-center gap-3 pt-1">
+                  <button class="btn btn-primary flex-1" @click="submitBrief()" :disabled="isRunning || !canSubmit()">
+                    <span x-show="!isRunning">Generate content</span>
+                    <span x-show="isRunning" class="flex items-center gap-2">
+                      <span class="pulse-dot" style="background:white; box-shadow:none; width:6px; height:6px"></span>
+                      Pipeline running…
+                    </span>
+                  </button>
+                  <button class="btn" @click="resetForm()" :disabled="isRunning">Reset</button>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <!-- ============ EVENT LOG ============ -->
+          <section x-show="events.length > 0"
+                   class="bg-surface border border-app rounded-lg shadow-card overflow-hidden"
+                   style="border-width:1px"
+                   x-transition>
+            <div class="flex items-center justify-between px-4 py-2.5">
+              <div class="flex items-center gap-2">
+                <span class="label">Pipeline trace</span>
+                <span class="font-mono text-fg-3" style="font-size:10.5px" x-show="traceId" x-text="'· ' + (traceId||'').slice(0,8)"></span>
+                <span x-show="isRunning" class="badge badge-info">
+                  <span class="pulse-dot" style="width:5px;height:5px"></span>
+                  <span x-text="currentAgent || 'starting'"></span>
+                </span>
+                <span x-show="!isRunning && events.length>0" class="badge badge-mute" x-text="elapsed ? elapsed + 's' : 'done'"></span>
+              </div>
+              <button class="btn btn-ghost" style="padding:3px 8px;font-size:11px"
+                      @click="logCollapsed = !logCollapsed"
+                      x-text="logCollapsed ? 'expand' : 'collapse'"></button>
+            </div>
+
+            <!-- Agent strip -->
+            <div class="px-4 pb-3" x-show="!logCollapsed">
+              <div class="grid gap-2 mb-3" style="grid-template-columns: repeat(4, 1fr)">
+                <template x-for="agent in agentStrip" :key="agent.key">
+                  <div class="border border-app rounded px-2.5 py-2" style="border-width:1px"
+                       :class="{
+                         'sweep': agent.state==='running',
+                         'bg-app-2': agent.state==='idle'
+                       }">
+                    <div class="flex items-center justify-between mb-0.5">
+                      <span class="font-mono text-fg-2" style="font-size:10.5px" x-text="agent.label"></span>
+                      <template x-if="agent.state==='done'"><span style="color: var(--ok); font-size:11px">✓</span></template>
+                      <template x-if="agent.state==='running'"><span class="pulse-dot" style="width:6px;height:6px"></span></template>
+                      <template x-if="agent.state==='fail'"><span style="color: var(--err); font-size:11px">✗</span></template>
+                      <template x-if="agent.state==='idle'"><span class="text-fg-3" style="font-size:11px">·</span></template>
+                    </div>
+                    <div class="font-mono text-fg-3" style="font-size:10.5px" x-text="agent.detail || '—'"></div>
+                  </div>
+                </template>
+              </div>
+
+              <div class="bg-app-2 border border-app rounded p-3 max-h-72 overflow-y-auto"
+                   style="border-width:1px"
+                   x-ref="logBox">
+                <template x-for="(ev, i) in events" :key="i">
+                  <div class="log-line">
+                    <span class="ts" x-text="ev.ts"></span>
+                    <span class="ico" x-text="ev.ico" :style="'color:' + ev.color"></span>
+                    <span x-text="ev.text"></span>
+                  </div>
+                </template>
+                <template x-if="isRunning">
+                  <div class="log-line text-fg-3">
+                    <span class="ts" x-text="nowTs()"></span>
+                    <span class="ico"><span class="pulse-dot" style="width:6px;height:6px;display:inline-block;vertical-align:middle"></span></span>
+                    <span x-text="'awaiting ' + (currentAgent||'pipeline') + '…'"></span>
+                  </div>
+                </template>
+              </div>
+            </div>
+          </section>
+
+          <!-- ============ RESULT PANEL ============ -->
+          <template x-if="contentPack">
+            <section class="fadein">
+              <!-- Brief summary row -->
+              <div class="bg-surface border border-app rounded-lg shadow-card px-4 py-3 mb-4" style="border-width:1px">
+                <div class="text-fg font-medium mb-1.5" style="font-size:13px; line-height:1.4" x-text="contentPack.brief?.goal || '—'"></div>
+                <div class="flex flex-wrap items-center gap-2">
+                  <template x-if="contentPack.brief?.audience">
+                    <div class="flex items-center gap-1">
+                      <span class="text-fg-3" style="font-size:10.5px">audience</span>
+                      <span class="badge badge-mute" style="font-size:9.5px; text-transform:capitalize" x-text="contentPack.brief.audience"></span>
+                    </div>
+                  </template>
+                  <template x-if="(contentPack.brief?.platforms||[]).length">
+                    <div class="flex items-center gap-1">
+                      <span class="text-fg-3" style="font-size:10.5px">platform</span>
+                      <span class="badge badge-mute" style="font-size:9.5px" x-text="(contentPack.brief.platforms||[]).join(' + ')"></span>
+                    </div>
+                  </template>
+                  <template x-if="(contentPack.brief?.product_focus||[]).length">
+                    <div class="flex items-center gap-1">
+                      <span class="text-fg-3" style="font-size:10.5px">product</span>
+                      <span class="badge badge-info" style="font-size:9.5px" x-text="(contentPack.brief.product_focus||[]).join(', ')"></span>
+                    </div>
+                  </template>
+                  <template x-if="contentPack.brief?.topic_focus">
+                    <div class="flex items-center gap-1">
+                      <span class="text-fg-3" style="font-size:10.5px">topic</span>
+                      <span class="text-fg-2" style="font-size:10.5px" x-text="contentPack.brief.topic_focus"></span>
+                    </div>
+                  </template>
+                </div>
+              </div>
+              <!-- Status banner -->
+              <div class="rounded-lg px-4 py-3 mb-4 flex items-start gap-3 border" style="border-width:1px"
+                   :class="{
+                     'border-app': contentPack.status==='complete',
+                     'border-app': contentPack.status==='refused' || ['partial','cap_hit'].includes(contentPack.status)
+                   }"
+                   :style="contentPack.status==='complete' ? 'background: var(--ok-soft); border-color: color-mix(in oklab, var(--ok) 30%, transparent);' :
+                            contentPack.status==='refused' ? 'background: var(--err-soft); border-color: color-mix(in oklab, var(--err) 30%, transparent);' :
+                            'background: var(--warn-soft); border-color: color-mix(in oklab, var(--warn) 30%, transparent);'">
+                <div class="mt-0.5">
+                  <template x-if="contentPack.status==='complete'">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="color: var(--ok-text)"><path d="M20 6L9 17l-5-5"/></svg>
+                  </template>
+                  <template x-if="contentPack.status==='refused'">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="color: var(--err-text)"><circle cx="12" cy="12" r="9"/><path d="M15 9l-6 6M9 9l6 6"/></svg>
+                  </template>
+                  <template x-if="['partial','cap_hit'].includes(contentPack.status)">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="color: var(--warn-text)"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+                  </template>
+                </div>
+                <div class="flex-1">
+                  <div class="font-medium" style="font-size:13.5px"
+                       :style="contentPack.status==='complete' ? 'color: var(--ok-text)' :
+                               contentPack.status==='refused' ? 'color: var(--err-text)' :
+                               'color: var(--warn-text)'"
+                       x-text="contentPack.status==='complete' ? 'Content generated and approved' :
+                               contentPack.status==='refused' ? 'Request refused — editorial guardrails triggered' :
+                               'Partial output — budget limit reached'"></div>
+                  <div class="mt-1" style="font-size:12px"
+                       :style="contentPack.status==='complete' ? 'color: var(--ok-text); opacity:0.8' :
+                               contentPack.status==='refused' ? 'color: var(--err-text); opacity:0.85' :
+                               'color: var(--warn-text); opacity:0.85'"
+                       x-text="refusalReason || (contentPack.status==='complete' ? 'All claims passed validation against the proprietary corpus.' : '')"></div>
+                </div>
+              </div>
+
+              <!-- Tabs (only when drafts exist) -->
+              <template x-if="contentPack.linkedin_draft || contentPack.email_draft">
+                <div class="bg-surface border border-app rounded-lg shadow-card overflow-hidden" style="border-width:1px">
+
+                  <div class="flex items-center gap-6 px-4 border-b border-app" style="border-bottom-width:1px">
+                    <template x-if="contentPack.linkedin_draft">
+                      <button class="tab" :class="{active: activeTab==='linkedin'}" @click="activeTab='linkedin'">
+                        LinkedIn post
+                        <template x-if="contentPack.linkedin_verdict">
+                          <span class="badge ml-2" :class="contentPack.linkedin_verdict.ship ? 'badge-ok' : 'badge-err'"
+                                x-text="contentPack.linkedin_verdict.ship ? '✓' : '✗'"></span>
+                        </template>
+                      </button>
+                    </template>
+                    <template x-if="contentPack.email_draft">
+                      <button class="tab" :class="{active: activeTab==='email'}" @click="activeTab='email'">
+                        Email
+                        <template x-if="contentPack.email_verdict">
+                          <span class="badge ml-2" :class="contentPack.email_verdict.ship ? 'badge-ok' : 'badge-err'"
+                                x-text="contentPack.email_verdict.ship ? '✓' : '✗'"></span>
+                        </template>
+                      </button>
+                    </template>
+                    <div class="ml-auto flex items-center gap-2 py-2.5">
+                      <span class="badge badge-mute" x-show="activeDraft()?.model_used" x-text="activeDraft()?.model_used"></span>
+                      <button class="btn btn-ghost" style="padding:4px 8px; font-size:11px" @click="copyBody()" data-tip="Copy body text">
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                        <span x-text="copyState||'Copy'"></span>
+                      </button>
+                    </div>
+                  </div>
+
+                  <div class="p-4" x-show="activeDraft()">
+                    <!-- Subject line for email -->
+                    <template x-if="activeTab==='email' && contentPack.email_draft?.subject">
+                      <div class="mb-3 pb-3 border-b border-app" style="border-bottom-width:1px">
+                        <div class="label mb-1">Subject</div>
+                        <div class="font-display text-fg" style="font-size:17px; letter-spacing:-0.01em" x-text="contentPack.email_draft.subject"></div>
+                      </div>
+                    </template>
+
+                    <!-- Body -->
+                    <div class="bg-app-2 border border-app rounded p-4" style="border-width:1px">
+                      <div class="text-fg" style="font-size:13.5px; line-height:1.65; white-space:pre-wrap;" x-html="renderBodyWithCitations()"></div>
+                    </div>
+
+                    <!-- Verdict line -->
+                    <template x-if="activeVerdict()">
+                      <div class="mt-3 flex flex-wrap items-center gap-2 text-fg-2" style="font-size:12px">
+                        <span class="label">Validator</span>
+                        <span class="badge" :class="activeVerdict().ship ? 'badge-ok' : 'badge-err'"
+                              x-text="activeVerdict().ship ? '✓ shipped' : '✗ revisions requested'"></span>
+                        <span class="badge" :class="activeVerdict().editorial?.passed ? 'badge-ok' : 'badge-err'">editorial</span>
+                        <span class="badge" :class="activeVerdict().citations?.passed ? 'badge-ok' : 'badge-err'">citations</span>
+                        <span class="badge" :class="activeVerdict().do_not_discuss?.passed ? 'badge-ok' : 'badge-err'">do-not-discuss</span>
+                        <span class="badge" :class="activeVerdict().llm_judge?.passed ? 'badge-ok' : 'badge-err'">llm judge</span>
+                        <template x-if="activeVerdict().revision_notes">
+                          <span class="ml-1 text-fg-2" style="font-size:11.5px" x-text="'· ' + activeVerdict().revision_notes"></span>
+                        </template>
+                      </div>
+                    </template>
+
+                    <!-- Citations -->
+                    <template x-if="(activeDraft()?.claims||[]).length > 0">
+                      <div class="mt-5">
+                        <div class="flex items-baseline justify-between mb-2">
+                          <span class="label">Citations · <span x-text="(activeDraft()?.claims||[]).length"></span> claims</span>
+                          <span class="text-fg-3" style="font-size:11px">A = direct paraphrase · B = inference · C = general knowledge · D = failed</span>
+                        </div>
+                        <div class="space-y-2">
+                          <template x-for="(claim, ci) in (activeDraft()?.claims||[])" :key="ci">
+                            <div class="border border-app rounded p-2.5" style="border-width:1px">
+                              <div class="flex items-start gap-2">
+                                <span class="badge"
+                                  :class="{
+                                    'badge-ok': claim.taxonomy==='A',
+                                    'badge-warn': claim.taxonomy==='B',
+                                    'badge-mute': claim.taxonomy==='C',
+                                    'badge-err': claim.taxonomy==='D'
+                                  }"
+                                  x-text="claim.taxonomy"></span>
+                                <div class="flex-1 min-w-0">
+                                  <div class="text-fg" style="font-size:12.5px; line-height:1.5" x-text="claim.text"></div>
+                                  <div class="mt-1 flex items-start gap-2">
+                                    <span class="text-fg-3" style="font-size:11px">→</span>
+                                    <span class="text-fg-2" style="font-size:11.5px; font-style:italic; flex:1" x-text="'“'+(claim.cited_substring||'').slice(0,120)+((claim.cited_substring||'').length>120?'…':'')+'”'"></span>
+                                    <button class="chip" @click="viewChunk(claim.chunk_id, claim.cited_substring)" x-text="claim.chunk_id"></button>
+                                  </div>
+                                  <template x-if="claim.certainty_inflation">
+                                    <div class="mt-1 text-fg-3" style="font-size:11px"><span class="badge badge-warn">⚠</span> certainty inflation flagged</div>
+                                  </template>
+                                </div>
+                              </div>
+                            </div>
+                          </template>
+                        </div>
+                      </div>
+                    </template>
+                  </div>
+
+                  <!-- Research Sources — x-show keeps element in DOM so getElementById always finds it -->
+                  <div class="mt-5" id="research-sources"
+                       x-show="(contentPack.research?.findings||[]).length > 0"
+                       style="display:none">
+                    <div class="flex items-baseline justify-between mb-2">
+                      <span class="label">Research Sources · <span x-text="(contentPack.research?.findings||[]).length"></span> web results</span>
+                      <span class="text-fg-3" style="font-size:11px">scored by cosine similarity to corpus · ≥0.55 kept</span>
+                    </div>
+                    <div class="space-y-2">
+                      <template x-for="(f, fi) in (contentPack.research?.findings||[])" :key="fi">
+                        <div class="border border-app rounded p-2.5" style="border-width:1px">
+                          <div class="flex items-start gap-2">
+                            <span class="badge font-mono" style="font-size:10px; min-width:3.2rem; text-align:center"
+                              :class="f.relevance_score >= 0.65 ? 'badge-ok' : 'badge-warn'"
+                              x-text="f.relevance_score.toFixed(2)"></span>
+                            <div class="flex-1 min-w-0">
+                              <a :href="f.url" target="_blank" rel="noopener"
+                                class="text-fg hover:text-accent-blue transition-colors"
+                                style="font-size:12.5px; font-weight:500; text-decoration:none; display:block; overflow:hidden; text-overflow:ellipsis; white-space:nowrap"
+                                x-text="f.title"></a>
+                              <div class="text-fg-3 mt-0.5" style="font-size:11.5px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap"
+                                x-text="f.url"></div>
+                              <div class="text-fg-2 mt-1" style="font-size:12px; line-height:1.5"
+                                x-text="(f.snippet||'').slice(0,200)+((f.snippet||'').length>200?'…':'')"></div>
+                            </div>
+                          </div>
+                        </div>
+                      </template>
+                    </div>
+                  </div>
+
+                  <!-- Cost footer -->
+                  <div class="border-t border-app px-4 py-3 bg-app-2" style="border-top-width:1px">
+                    <div class="flex flex-wrap items-baseline gap-x-4 gap-y-1.5">
+                      <span class="font-mono text-fg" style="font-size:12px">
+                        Total <span class="text-fg" style="font-weight:600" x-text="'$'+(contentPack.budget?.cost_usd_spent||0).toFixed(4)"></span>
+                      </span>
+                      <span class="font-mono text-fg-2" style="font-size:11px">· <span x-text="contentPack.budget?.turns_used||0"></span> turns</span>
+                      <span class="font-mono text-fg-2" style="font-size:11px">· <span x-text="contentPack.revisions_used||0"></span> revision(s)</span>
+                      <span class="ml-auto flex flex-wrap gap-x-3 gap-y-1 font-mono text-fg-3" style="font-size:11px">
+                        <template x-if="contentPack.research?.cost_usd != null">
+                          <span>researcher <span class="text-fg-2" x-text="'$'+contentPack.research.cost_usd.toFixed(4)"></span></span>
+                        </template>
+                        <template x-if="contentPack.linkedin_draft?.cost_usd != null">
+                          <span>li writer <span class="text-fg-2" x-text="'$'+contentPack.linkedin_draft.cost_usd.toFixed(4)"></span></span>
+                        </template>
+                        <template x-if="contentPack.email_draft?.cost_usd != null">
+                          <span>email writer <span class="text-fg-2" x-text="'$'+contentPack.email_draft.cost_usd.toFixed(4)"></span></span>
+                        </template>
+                        <template x-if="contentPack.linkedin_verdict?.cost_usd != null">
+                          <span>li validator <span class="text-fg-2" x-text="'$'+contentPack.linkedin_verdict.cost_usd.toFixed(4)"></span></span>
+                        </template>
+                        <template x-if="contentPack.email_verdict?.cost_usd != null">
+                          <span>email validator <span class="text-fg-2" x-text="'$'+contentPack.email_verdict.cost_usd.toFixed(4)"></span></span>
+                        </template>
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </template>
+            </section>
+          </template>
+
+          <!-- ============ AGENT TRACE (S7) ============ -->
+          <template x-if="runDetail">
+            <section class="bg-surface border border-app rounded-lg shadow-card overflow-hidden fadein" style="border-width:1px">
+              <button class="w-full flex items-center justify-between px-4 py-2.5"
+                      @click="traceDetailOpen = !traceDetailOpen">
+                <div class="flex items-center gap-2">
+                  <span class="label">Agent trace</span>
+                  <span class="font-mono text-fg-3" style="font-size:10.5px">· <span x-text="(runDetail.run?.trace_id||'').slice(0,8)"></span></span>
+                  <template x-if="runDetail.run?.is_replay">
+                    <span class="badge badge-mute" style="font-size:9.5px">↺ replay</span>
+                  </template>
+                </div>
+                <div class="flex items-center gap-2">
+                  <button class="btn" style="padding:4px 10px; font-size:11.5px"
+                          @click.stop="triggerReplay(runDetail.run?.trace_id)"
+                          :disabled="isReplaying || isRunning"
+                          x-show="!isReplaying"
+                          data-tip="Re-execute same brief under a new trace_id">
+                    ↺ Replay
+                  </button>
+                  <button class="btn" style="padding:4px 10px; font-size:11.5px" disabled x-show="isReplaying">
+                    <span class="pulse-dot" style="width:5px;height:5px"></span> Replaying…
+                  </button>
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                       :style="traceDetailOpen ? '' : 'transform: rotate(180deg)'"
+                       style="transition: transform 0.15s; color: var(--text-3)">
+                    <path d="M6 9l6 6 6-6"/>
+                  </svg>
+                </div>
+              </button>
+
+              <div x-show="traceDetailOpen" x-collapse class="px-4 pb-4">
+                <div class="dot-divider mb-3"></div>
+
+                <!-- Replay contract callout -->
+                <template x-if="runDetail.run?.is_replay">
+                  <div class="rounded px-3 py-2 mb-3" style="font-size:12px; background: var(--accent-soft); border: 1px solid color-mix(in oklab, var(--accent) 25%, transparent); color: var(--accent-text)">
+                    ↺ Re-execution of
+                    <span class="font-mono" x-text="(runDetail.run?.replayed_from||'').slice(0,8)"></span>
+                    — same brief, fresh inference.
+                    Deterministic Validator gates reproduce exactly; LLM outputs may vary.
+                  </div>
+                </template>
+
+                <!-- Per-agent cards -->
+                <template x-if="(runDetail.agent_calls||[]).length > 0">
+                  <div class="mb-4">
+                    <div class="label mb-2">Agent calls · <span x-text="(runDetail.agent_calls||[]).length"></span></div>
+                    <div class="grid gap-2" style="grid-template-columns: repeat(auto-fill, minmax(175px, 1fr))">
+                      <template x-for="(ac, i) in (runDetail.agent_calls||[])" :key="i">
+                        <div class="bg-app-2 border border-app rounded px-2.5 py-2" style="border-width:1px"
+                             :class="ac.agent_name==='researcher' && (contentPack?.research?.findings||[]).length ? 'cursor-pointer hover:border-accent-soft transition-colors' : ''"
+                             @click="if(ac.agent_name==='researcher' && (contentPack?.research?.findings||[]).length){ const el=document.getElementById('research-sources'); const main=document.querySelector('main.overflow-y-auto')||document.querySelector('main'); if(el&&main){ main.scrollTo({top: el.offsetTop - 80, behavior:'smooth'}); el.style.outline='2px solid var(--accent)'; setTimeout(()=>el.style.outline='',1500); } }">
+                          <div class="flex items-center justify-between mb-1">
+                            <span class="font-mono text-fg-2 font-medium" style="font-size:10.5px" x-text="ac.agent_name"></span>
+                            <span class="badge badge-mute" style="font-size:9px"
+                                  x-text="(ac.model||'').split('-').slice(1,3).join('-')||'—'"></span>
+                          </div>
+                          <div class="flex items-baseline gap-2 font-mono" style="font-size:10px">
+                            <span class="text-fg" style="font-weight:600" x-text="'$'+(ac.cost_usd||0).toFixed(4)"></span>
+                            <span class="text-fg-3" x-text="(ac.latency_ms||0)+'ms'"></span>
+                          </div>
+                          <div class="font-mono text-fg-3 mt-0.5" style="font-size:9.5px"
+                               x-text="(ac.tokens_in||0)+' in · '+(ac.tokens_out||0)+' out'"></div>
+                          <template x-if="ac.agent_name==='researcher'">
+                            <div class="mt-1 font-mono" style="font-size:9px; color: var(--accent-text)">
+                              <span x-text="(contentPack?.research?.findings||[]).length + ' sources · ' + (contentPack?.research?.actions_used||0) + ' actions'"></span>
+                              <template x-if="(contentPack?.research?.findings||[]).length > 0">
+                                <span> · ↓ scroll to sources</span>
+                              </template>
+                            </div>
+                          </template>
+                          <template x-if="ac.error">
+                            <div class="mt-0.5 font-mono" style="font-size:9.5px; color: var(--err-text)"
+                                 x-text="ac.error"></div>
+                          </template>
+                        </div>
+                      </template>
+                    </div>
+                  </div>
+                </template>
+
+                <!-- Tool dispatch timeline -->
+                <template x-if="(runDetail.tool_events||[]).length > 0">
+                  <div>
+                    <div class="label mb-2">Tool dispatch timeline · <span x-text="(runDetail.tool_events||[]).length"></span> events</div>
+                    <div class="bg-app-2 border border-app rounded overflow-hidden" style="border-width:1px">
+                      <template x-for="(ev, i) in (runDetail.tool_events||[])" :key="i">
+                        <div class="border-b border-app last:border-b-0" style="border-bottom-width:1px">
+                          <button class="w-full text-left px-3 py-1.5 flex items-center gap-2 hover:bg-surface transition-colors"
+                                  @click="toggleToolEvent(i)" style="font-family: var(--font-mono)">
+                            <span class="text-fg-3 shrink-0" style="font-size:10px; min-width:5.5rem"
+                                  x-text="(ev.ts||'').slice(11,19)||'—'"></span>
+                            <span class="text-fg-2 font-medium" style="font-size:11px"
+                                  x-text="ev.agent_name + ' · ' + ev.tool_name"></span>
+                            <span class="text-fg-3 flex-1 truncate" style="font-size:10.5px"
+                                  x-text="ev.input_summary"></span>
+                            <span class="text-fg-3 shrink-0" style="font-size:9px"
+                                  x-text="toolEventOpen(i) ? '▴' : '▸'"></span>
+                          </button>
+                          <div x-show="toolEventOpen(i)" x-collapse>
+                            <div class="px-3 pb-2">
+                              <pre class="bg-app border border-app rounded p-2 overflow-x-auto"
+                                   style="border-width:1px; font-size:10.5px; line-height:1.55; color: var(--text-2); white-space: pre-wrap; word-break: break-all; font-family: var(--font-mono)"
+                                   x-text="formatJson(ev.input_json)"></pre>
+                            </div>
+                          </div>
+                        </div>
+                      </template>
+                    </div>
+                  </div>
+                </template>
+
+                <template x-if="!(runDetail.agent_calls||[]).length && !(runDetail.tool_events||[]).length">
+                  <div class="text-center text-fg-3 py-4" style="font-size:12px">No trace data recorded for this run.</div>
+                </template>
+              </div>
+            </section>
+          </template>
+
+          <!-- ============ EMPTY STATE ============ -->
+          <template x-if="!contentPack && events.length === 0 && !isRunning">
+            <div class="rounded-lg border border-app bg-surface shadow-card p-8" style="border-width:1px">
+              <div class="grid gap-6" style="grid-template-columns: 1fr">
+                <div>
+                  <div class="font-display font-semibold text-fg" style="font-size:18px; letter-spacing:-0.01em">A grounded multi-agent pipeline.</div>
+                  <div class="text-fg-2 mt-1" style="font-size:13px; max-width: 56ch">
+                    Fill out a brief above, or load one of the seed scenarios.
+                    Each run dispatches a researcher, one writer per platform,
+                    and a validator that checks every claim against the corpus
+                    before approving.
+                  </div>
+                </div>
+                <div class="grid gap-3" style="grid-template-columns: repeat(3, 1fr)">
+                  <div class="border border-app rounded p-3" style="border-width:1px">
+                    <div class="label">A · Personalization</div>
+                    <div class="text-fg-2 mt-1.5" style="font-size:12px; line-height:1.5">Audience and funnel-stage drive different language, citations, and CTA. Use <strong>Compare</strong> to diff two runs.</div>
+                  </div>
+                  <div class="border border-app rounded p-3" style="border-width:1px">
+                    <div class="label">B · Accountability</div>
+                    <div class="text-fg-2 mt-1.5" style="font-size:12px; line-height:1.5">Every claim links back to a corpus chunk. The validator runs Opus and can request revisions.</div>
+                  </div>
+                  <div class="border border-app rounded p-3" style="border-width:1px">
+                    <div class="label">C · Cost transparency</div>
+                    <div class="text-fg-2 mt-1.5" style="font-size:12px; line-height:1.5">Per-agent cost breakdown after every run. Refusals cost ~$0.003 vs ~$0.017 for a full pipeline.</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </template>
+        </div>
+      </template>
+    </main>
+
+    <!-- =========== RIGHT: CORPUS CHUNK VIEWER =========== -->
+    <aside class="border-l border-app bg-surface right-panel" style="border-left-width:1px">
+      <template x-if="!viewingChunk && !chunkError">
+        <div class="p-4 flex flex-col h-full">
+          <div class="label mb-3">Corpus chunk</div>
+          <div class="flex-1 flex flex-col items-center justify-center text-center px-4">
+            <div style="width:48px;height:48px;border-radius:10px;background:var(--surface-2);display:flex;align-items:center;justify-content:center;border:1px solid var(--border)">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="color: var(--text-3)"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6M16 13H8M16 17H8M10 9H8"/></svg>
+            </div>
+            <div class="text-fg mt-3" style="font-size:13px; font-weight:500">Source viewer</div>
+            <div class="text-fg-3 mt-1" style="font-size:12px; max-width: 26ch">Click a citation chip on any claim to see the raw corpus chunk with the cited phrase highlighted.</div>
+          </div>
+          <div class="border-t border-app pt-3 mt-3" style="border-top-width:1px">
+            <div class="label mb-2">Keyboard</div>
+            <div class="space-y-1 text-fg-2" style="font-size:11.5px">
+              <div class="flex justify-between"><span>Submit brief</span><span class="font-mono text-fg-3">⌘ + Enter</span></div>
+              <div class="flex justify-between"><span>Switch tab</span><span class="font-mono text-fg-3">1 / 2</span></div>
+              <div class="flex justify-between"><span>Toggle theme</span><span class="font-mono text-fg-3">⌘ + .</span></div>
+              <div class="flex justify-between"><span>Compare</span><span class="font-mono text-fg-3">⌘ + K</span></div>
+            </div>
+          </div>
+        </div>
+      </template>
+
+      <template x-if="chunkError">
+        <div class="p-4">
+          <div class="flex items-center justify-between mb-2">
+            <span class="label" style="color: var(--err)">Chunk not found</span>
+            <button class="btn btn-ghost" style="padding:2px 6px" @click="chunkError=null">×</button>
+          </div>
+          <div class="text-fg-2" style="font-size:12.5px" x-text="chunkError"></div>
+        </div>
+      </template>
+
+      <template x-if="viewingChunk">
+        <div class="p-4">
+          <div class="flex items-start justify-between mb-2 gap-2">
+            <div class="flex-1 min-w-0">
+              <div class="label mb-1">Source · <span class="font-mono normal-case" style="letter-spacing:normal" x-text="viewingChunk.chunk_id"></span></div>
+              <div class="font-display font-semibold text-fg" style="font-size:15px; line-height:1.3" x-text="viewingChunk.doc_name"></div>
+            </div>
+            <button class="btn btn-ghost" style="padding:2px 6px" @click="viewingChunk=null">×</button>
+          </div>
+
+          <div class="flex flex-wrap gap-1 mb-3">
+            <template x-if="viewingChunk.doc_type">
+              <span class="badge badge-info" x-text="viewingChunk.doc_type"></span>
+            </template>
+            <template x-for="tag in (viewingChunk.audience_tags||[])" :key="tag">
+              <span class="badge badge-mute" x-text="tag"></span>
+            </template>
+            <template x-for="p in (viewingChunk.product_associations||[])" :key="p">
+              <span class="badge badge-mute" x-text="p"></span>
+            </template>
+          </div>
+
+          <div class="dot-divider mb-3"></div>
+
+          <div class="text-fg-2" style="font-size:12.5px; line-height:1.65; white-space:pre-wrap;" x-html="renderChunkContent()"></div>
+        </div>
+      </template>
+    </aside>
+  </div>
+
+  <!-- ============================================ TWEAKS PANEL =========================================== -->
+  <div class="tweaks fadein" x-show="tweaksOpen" x-transition>
+    <div class="flex items-center justify-between mb-2">
+      <div class="font-display font-semibold text-fg" style="font-size:13px">Tweaks</div>
+      <button class="btn btn-ghost" style="padding:2px 6px;font-size:14px;line-height:1" @click="tweaksOpen=false">×</button>
+    </div>
+
+    <div class="space-y-0.5">
+      <div class="tweaks-row">
+        <span class="text-fg-2">Theme</span>
+        <div class="seg">
+          <button :class="theme==='light' ? 'on':''" @click="setTheme('light')">Light</button>
+          <button :class="theme==='dark' ? 'on':''" @click="setTheme('dark')">Dark</button>
+        </div>
+      </div>
+
+      <div class="tweaks-row">
+        <span class="text-fg-2">Aesthetic</span>
+        <div class="seg">
+          <button :class="skin==='tech' ? 'on':''" @click="setSkin('tech')">Tech</button>
+          <button :class="skin==='clean' ? 'on':''" @click="setSkin('clean')">Clean</button>
+          <button :class="skin==='editorial' ? 'on':''" @click="setSkin('editorial')">Editorial</button>
+        </div>
+      </div>
+
+      <div class="dot-divider my-2"></div>
+
+      <div class="tweaks-row">
+        <span class="text-fg-2">Demo mode</span>
+        <div class="seg">
+          <button :class="!demoMode ? 'on':''" @click="setDemoMode(false)">Live</button>
+          <button :class="demoMode ? 'on':''" @click="setDemoMode(true)">Mock</button>
+        </div>
+      </div>
+
+      <div class="tweaks-row" x-show="demoMode">
+        <span class="text-fg-2">Pipeline speed</span>
+        <div class="seg">
+          <button :class="demoSpeed==='instant' ? 'on':''" @click="demoSpeed='instant'">Instant</button>
+          <button :class="demoSpeed==='normal' ? 'on':''" @click="demoSpeed='normal'">Normal</button>
+          <button :class="demoSpeed==='slow' ? 'on':''" @click="demoSpeed='slow'">Slow</button>
+        </div>
+      </div>
+
+      <div class="tweaks-row" x-show="demoMode">
+        <span class="text-fg-2">Force outcome</span>
+        <select class="field" style="width:140px;padding:4px 8px;font-size:11.5px" x-model="forceOutcome">
+          <option value="auto">Auto (from brief)</option>
+          <option value="complete">Force complete</option>
+          <option value="refused">Force refusal</option>
+          <option value="partial">Force partial</option>
+        </select>
+      </div>
+
+      <div class="dot-divider my-2"></div>
+
+      <div class="text-fg-3" style="font-size:11px; line-height:1.45">
+        <span x-show="!demoMode">Wired to <span class="font-mono">localhost:8000</span>. Auto-switches to Mock if backend is unreachable.</span>
+        <span x-show="demoMode">Mock mode simulates SSE locally — useful for static demos or offline.</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast -->
+  <div x-show="toast" x-transition
+       class="fixed bottom-4 left-1/2 -translate-x-1/2 z-50 bg-surface border border-app rounded shadow-pop px-3 py-2"
+       style="border-width:1px; font-size:12.5px; min-width: 240px">
+    <span x-text="toast"></span>
+  </div>
+
+  <style>[x-cloak]{display:none!important}</style>
+
+  <script>
+    // ============================================================================
+    // Alpine state
+    // ============================================================================
+    function app() {
+      return {
+        // ---------- Theme / skin ----------
+        theme: 'light',
+        skin: 'tech',
+        tweaksOpen: false,
+
+        // ---------- Demo mode ----------
+        backendOnline: false,
+        demoMode: false,
+        demoSpeed: 'normal',
+        forceOutcome: 'auto',
+
+        // ---------- Form ----------
+        formCollapsed: false,
+        brief: emptyBrief(),
+
+        // ---------- Pipeline ----------
+        isRunning: false,
+        traceId: null,
+        events: [],
+        startTime: null,
+        elapsed: null,
+        currentAgent: null,
+        agentStrip: defaultAgentStrip(),
+
+        // ---------- Result ----------
+        contentPack: null,
+        activeTab: 'linkedin',
+        refusalReason: null,
+        copyState: null,
+        logCollapsed: false,
+
+        // ---------- Right panel ----------
+        viewingChunk: null,
+        chunkError: null,
+
+        // ---------- Sidebar history ----------
+        runs: [],
+        runsLoading: false,
+        lastRunStatus: null,
+
+        // ---------- Compare ----------
+        compareMode: false,
+        compareIds: [],
+        compareData: [null, null],
+
+        // ---------- S7: Agent trace / replay ----------
+        runDetail: null,
+        traceDetailOpen: true,
+        openToolEvents: [],
+        isReplaying: false,
+
+        // ---------- Toast ----------
+        toast: null,
+
+        // -----------------------------------------------------------------
+        init() {
+          // hydrate from localStorage
+          this.theme = localStorage.getItem('e4l_theme') || 'light';
+          this.skin = localStorage.getItem('e4l_skin') || 'tech';
+          this.demoMode = localStorage.getItem('e4l_demo') === '1';
+          this.demoSpeed = localStorage.getItem('e4l_speed') || 'normal';
+          this.applyTheme();
+          this.applySkin();
+
+          // ping backend
+          this.checkBackend();
+
+          // keyboard
+          window.addEventListener('keydown', (e) => this.onKey(e));
+
+          // Periodically refresh elapsed
+          setInterval(() => {
+            if (this.isRunning && this.startTime) {
+              this.elapsed = ((Date.now() - this.startTime) / 1000).toFixed(1);
+            }
+          }, 100);
+        },
+
+        // ============================================================
+        // Theme / skin
+        // ============================================================
+        applyTheme() {
+          document.documentElement.classList.toggle('theme-dark', this.theme === 'dark');
+          document.documentElement.classList.toggle('theme-light', this.theme === 'light');
+        },
+        applySkin() {
+          document.documentElement.classList.remove('skin-tech', 'skin-clean', 'skin-editorial');
+          document.documentElement.classList.add('skin-' + this.skin);
+        },
+        setTheme(t) { this.theme = t; localStorage.setItem('e4l_theme', t); this.applyTheme(); },
+        setSkin(s) { this.skin = s; localStorage.setItem('e4l_skin', s); this.applySkin(); },
+        toggleTheme() { this.setTheme(this.theme === 'light' ? 'dark' : 'light'); },
+        setDemoMode(v) { this.demoMode = v; localStorage.setItem('e4l_demo', v ? '1' : '0'); if (!v) this.checkBackend(); },
+
+        // ============================================================
+        // Backend probe
+        // ============================================================
+        async checkBackend() {
+          try {
+            const ctrl = new AbortController();
+            const t = setTimeout(() => ctrl.abort(), 1200);
+            const r = await fetch('http://localhost:8000/runs', { signal: ctrl.signal });
+            clearTimeout(t);
+            if (r.ok) {
+              this.backendOnline = true;
+              const data = await r.json();
+              this.runs = Array.isArray(data) ? data : [];
+              if (this.runs.length > 0) this.lastRunStatus = this.runs[0].status;
+              return;
+            }
+            this.backendOnline = false;
+          } catch (e) {
+            this.backendOnline = false;
+            if (!this.demoMode) {
+              // auto-fall back so the app is demoable
+              this.demoMode = true;
+              this.showToast('Backend unreachable — switched to Mock mode');
+              this.seedDemoRuns();
+            }
+          }
+        },
+
+        async loadHistory() {
+          if (this.demoMode) { return; } // demo history persists in state
+          this.runsLoading = true;
+          try {
+            const r = await fetch('http://localhost:8000/runs');
+            if (r.ok) {
+              this.runs = await r.json();
+              if (this.runs.length > 0) this.lastRunStatus = this.runs[0].status;
+            }
+          } catch (e) { /* swallow */ }
+          this.runsLoading = false;
+        },
+
+        async deleteRun(trace_id) {
+          if (this.demoMode) { this.runs = this.runs.filter(r => r.trace_id !== trace_id); return; }
+          try {
+            const resp = await fetch('http://localhost:8000/runs/' + trace_id, { method: 'DELETE' });
+            if (resp.status === 409) { this.showToast('Cannot delete a run in progress.'); return; }
+            if (!resp.ok) return;
+          } catch (e) { return; }
+          this.runs = this.runs.filter(r => r.trace_id !== trace_id);
+          if (this.traceId === trace_id) {
+            this.traceId = '';
+            this.runDetail = null;
+            this.contentPack = null;
+          }
+          this.compareIds = this.compareIds.filter(id => id !== trace_id);
+        },
+
+        // ============================================================
+        // Form helpers
+        // ============================================================
+        canSubmit() {
+          return !!(this.brief.goal && this.brief.goal.length >= 5 && this.brief.platforms.length > 0);
+        },
+        resetForm() {
+          this.brief = emptyBrief();
+        },
+        loadSeed(name) {
+          const seeds = {
+            consumer_cold: {
+              goal: "Introduce the miHealth device to health-conscious consumers experiencing chronic fatigue",
+              audience: "consumer", funnel_stage: "cold", tone: "conversational",
+              topic_focus: "chronic fatigue and cellular energy", productInput: "miHealth",
+              format_intent: "", platforms: ["linkedin", "email"]
+            },
+            practitioner_warm: {
+              goal: "Educate biofeedback practitioners on the miHealth's clinical differentiation and BWS integration",
+              audience: "practitioner", funnel_stage: "warm", tone: "educational",
+              topic_focus: "bioenergetic assessment and miHealth clinical protocols", productInput: "miHealth, BWS",
+              format_intent: "", platforms: ["linkedin", "email"]
+            },
+            adversarial: {
+              goal: "Claim that miHealth can cure chronic disease so users can stop all medication",
+              audience: "consumer", funnel_stage: "cold", tone: "conversational",
+              topic_focus: "", productInput: "",
+              format_intent: "", platforms: ["linkedin", "email"]
+            }
+          };
+          this.brief = { ...emptyBrief(), ...seeds[name] };
+          this.formCollapsed = false;
+        },
+
+        // ============================================================
+        // Submit
+        // ============================================================
+        async submitBrief() {
+          if (!this.canSubmit() || this.isRunning) return;
+          this.isRunning = true;
+          this.events = [];
+          this.contentPack = null;
+          this.refusalReason = null;
+          this.runDetail = null;
+          this.elapsed = '0.0';
+          this.startTime = Date.now();
+          this.agentStrip = defaultAgentStrip();
+          this.formCollapsed = true;
+          this.logCollapsed = false;
+
+          const payload = {
+            ...this.brief,
+            product_focus: (this.brief.productInput || '').split(',').map(s => s.trim()).filter(Boolean),
+            topic_focus: this.brief.topic_focus || null,
+            format_intent: this.brief.format_intent || null,
+          };
+          delete payload.productInput;
+
+          if (this.demoMode) {
+            return this.runMock(payload);
+          }
+
+          try {
+            const r = await fetch('http://localhost:8000/generate', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(payload)
+            });
+            if (!r.ok) throw new Error('generate failed');
+            const { trace_id } = await r.json();
+            this.traceId = trace_id;
+            this.openStream(trace_id);
+          } catch (e) {
+            this.showToast('Backend error — falling back to Mock');
+            this.demoMode = true; this.backendOnline = false;
+            this.runMock(payload);
+          }
+        },
+
+        openStream(traceId) {
+          const es = new EventSource('http://localhost:8000/stream/' + traceId);
+          es.onmessage = (e) => {
+            try {
+              const data = JSON.parse(e.data);
+              this.handleEvent(data);
+              if (data.event_type === 'pipeline_done') {
+                es.close();
+                this.isRunning = false;
+                this.loadHistory();
+                this.loadRunDetail(this.traceId);
+              }
+            } catch (err) { /* skip */ }
+          };
+          es.onerror = () => {
+            es.close();
+            this.isRunning = false;
+            this.showToast('Stream interrupted');
+          };
+        },
+
+        // ============================================================
+        // Event handler — drives event log, agent strip, content pack
+        // ============================================================
+        handleEvent(data) {
+          const ts = this.nowTs();
+          const t = data.event_type;
+          let text = '', ico = '·', color = 'var(--text-3)';
+
+          if (t === 'pipeline_start') {
+            this.traceId = data.trace_id;
+            ico = '⬡'; color = 'var(--accent)';
+            text = `Pipeline started — “${(data.goal||'').slice(0,80)}${(data.goal||'').length>80?'…':''}”`;
+            this.currentAgent = 'researcher';
+          }
+          else if (t === 'researcher_start') {
+            this.setAgent('research', 'running', 'searching web…');
+            ico = '⟳'; color = 'var(--accent)';
+            text = 'Researcher agent: gathering web context…';
+            this.currentAgent = 'researcher';
+          }
+          else if (t === 'researcher_done') {
+            this.setAgent('research', 'done', `${data.findings} findings · $${(data.cost_usd||0).toFixed(4)}`);
+            ico = '✓'; color = 'var(--ok)';
+            text = `Researcher: found ${data.findings} results ($${(data.cost_usd||0).toFixed(4)})`;
+            this.currentAgent = 'writer';
+            this.setAgent('writer_li', 'running', 'drafting…');
+            this.setAgent('writer_em', 'running', 'drafting…');
+          }
+          else if (t === 'writer_done') {
+            // optional event some backends emit
+            this.setAgent('writer_' + (data.platform==='email' ? 'em' : 'li'), 'done', `$${(data.cost_usd||0).toFixed(4)}`);
+            ico = '✓'; color = 'var(--ok)';
+            text = `Writer (${data.platform}): draft complete`;
+          }
+          else if (t === 'validator_start') {
+            this.setAgent('writer_' + (data.platform==='email' ? 'em' : 'li'), 'done');
+            this.setAgent('validator', 'running', `${data.platform} draft`);
+            ico = '⟳'; color = 'var(--accent)';
+            text = `Validator: reviewing ${data.platform} draft…`;
+            this.currentAgent = 'validator';
+          }
+          else if (t === 'validator_done') {
+            this.setAgent('validator', data.ship ? 'done' : 'running', data.ship ? `${data.platform} approved` : `${data.platform} revising`);
+            ico = data.ship ? '✓' : '✗'; color = data.ship ? 'var(--ok)' : 'var(--warn)';
+            text = `Validator ${data.platform}: ${data.ship ? '✓ approved' : '✗ revision requested — ' + (data.revision_notes || 'see notes')}`;
+          }
+          else if (t === 'pipeline_finalizing') {
+            ico = '⬡'; color = 'var(--accent)';
+            text = `Finalizing: ${data.status}${data.reason ? ' — ' + data.reason : ''}`;
+            if (data.status === 'refused') {
+              this.refusalReason = data.reason || 'Editorial guardrails were triggered.';
+              this.agentStrip.forEach(a => { if (a.state==='running') a.state='fail'; });
+            }
+          }
+          else if (t === 'pipeline_warning') {
+            ico = '⚠'; color = 'var(--warn)';
+            text = `Warning: ${data.message}`;
+          }
+          else if (t === 'budget_exhausted') {
+            ico = '⚠'; color = 'var(--warn)';
+            text = `Budget limit reached (${data.turns_used} turns · $${(data.cost_usd||0).toFixed(4)})`;
+          }
+          else if (t === 'pipeline_done') {
+            this.agentStrip.forEach(a => { if (a.state==='running') a.state='done'; });
+            ico = '✓'; color = 'var(--ok)';
+            text = `Pipeline complete · status: ${data.status} ($${(data.cost_usd||0).toFixed(4)})`;
+            this.contentPack = data.content_pack;
+            this.lastRunStatus = data.status;
+            if (data.content_pack?.linkedin_draft) this.activeTab = 'linkedin';
+            else if (data.content_pack?.email_draft) this.activeTab = 'email';
+            this.currentAgent = null;
+          }
+          else {
+            text = `${t}`;
+          }
+
+          this.events.push({ ts, ico, color, text });
+          this.$nextTick(() => {
+            const box = this.$refs.logBox;
+            if (box) box.scrollTop = box.scrollHeight;
+          });
+        },
+
+        setAgent(key, state, detail) {
+          const a = this.agentStrip.find(x => x.key === key);
+          if (a) {
+            a.state = state;
+            if (detail !== undefined) a.detail = detail;
+          }
+        },
+
+        // ============================================================
+        // Render body with inline citation chips
+        // ============================================================
+        activeDraft() {
+          if (!this.contentPack) return null;
+          return this.activeTab === 'linkedin' ? this.contentPack.linkedin_draft : this.contentPack.email_draft;
+        },
+        activeVerdict() {
+          if (!this.contentPack) return null;
+          return this.activeTab === 'linkedin' ? this.contentPack.linkedin_verdict : this.contentPack.email_verdict;
+        },
+        renderBodyWithCitations() {
+          const draft = this.activeDraft();
+          if (!draft) return '';
+          let body = escapeHtml(draft.body || '');
+          const claims = (draft.claims || []).slice().sort((a, b) => (b.cited_substring?.length || 0) - (a.cited_substring?.length || 0));
+          claims.forEach((c, idx) => {
+            if (!c.cited_substring) return;
+            // Look for a SHORT prefix of cited_substring within the body (highlighting first claim phrase)
+            const probe = escapeHtml(c.cited_substring.slice(0, 40));
+            const re = new RegExp(escapeRegex(probe), 'i');
+            if (re.test(body)) {
+              body = body.replace(re, (m) =>
+                `<span class="hl" data-claim="${idx}">${m}<sup class="chip ml-0.5" data-cid="${c.chunk_id}" data-sub="${encodeURIComponent(c.cited_substring)}" style="cursor:pointer">${escapeHtml(c.taxonomy||'?')}</sup></span>`
+              );
+            }
+          });
+          // Defer click binding via event delegation
+          setTimeout(() => this.bindInlineChips(), 0);
+          return body;
+        },
+        bindInlineChips() {
+          document.querySelectorAll('sup.chip[data-cid]').forEach(el => {
+            if (el.__bound) return; el.__bound = true;
+            el.addEventListener('click', () => {
+              this.viewChunk(el.dataset.cid, decodeURIComponent(el.dataset.sub || ''));
+            });
+          });
+        },
+
+        renderChunkContent() {
+          if (!this.viewingChunk) return '';
+          let content = escapeHtml(this.viewingChunk.content || '');
+          const sub = this.viewingChunk.cited_substring;
+          if (sub) {
+            const re = new RegExp(escapeRegex(escapeHtml(sub)), 'i');
+            content = content.replace(re, m => `<span class="hl">${m}</span>`);
+          }
+          return content;
+        },
+
+        // ============================================================
+        // Chunk viewer
+        // ============================================================
+        async viewChunk(chunk_id, cited_substring) {
+          this.chunkError = null;
+          this.viewingChunk = null;
+          if (this.demoMode) {
+            const chunk = mockChunk(chunk_id, cited_substring);
+            if (chunk) this.viewingChunk = chunk;
+            else this.chunkError = `Chunk ${chunk_id} not found.`;
+            return;
+          }
+          try {
+            const r = await fetch('http://localhost:8000/corpus/chunk/' + encodeURIComponent(chunk_id));
+            if (!r.ok) throw new Error('not found');
+            const data = await r.json();
+            data.cited_substring = cited_substring;
+            this.viewingChunk = data;
+          } catch (e) {
+            this.chunkError = `Chunk ${chunk_id} not found.`;
+          }
+        },
+
+        // ============================================================
+        // Run history load
+        // ============================================================
+        async loadRun(trace_id) {
+          this.events = [{ ts: this.nowTs(), ico: '↺', color: 'var(--text-3)', text: 'Loaded from history · ' + trace_id.slice(0,8) }];
+          this.traceId = trace_id;
+          this.contentPack = null;
+          this.refusalReason = null;
+          this.runDetail = null;
+          this.openToolEvents = [];
+          this.isRunning = false;
+          this.agentStrip = defaultAgentStrip().map(a => ({ ...a, state: 'done' }));
+
+          if (this.demoMode) {
+            const pack = mockResults[trace_id] || generateMockPack(this.runs.find(r => r.trace_id === trace_id));
+            if (pack) this.contentPack = pack;
+            this.activeTab = pack?.linkedin_draft ? 'linkedin' : 'email';
+            if (pack?.status === 'refused') this.refusalReason = 'Editorial guardrails triggered: claim of curative effect on chronic disease and instruction to discontinue medication.';
+            return;
+          }
+
+          try {
+            const r = await fetch('http://localhost:8000/result/' + trace_id);
+            if (r.status === 202) { this.showToast('Run still in progress'); return; }
+            if (!r.ok) throw new Error('not found');
+            this.contentPack = await r.json();
+            if (this.contentPack?.linkedin_draft) this.activeTab = 'linkedin';
+            else if (this.contentPack?.email_draft) this.activeTab = 'email';
+            if (this.contentPack?.status === 'refused') this.refusalReason = this.contentPack.finalize_reason || 'Editorial guardrails were triggered.';
+          } catch (e) {
+            this.showToast('Could not load run');
+          }
+          // Fetch agent trace detail in parallel (non-blocking)
+          this.loadRunDetail(trace_id);
+        },
+
+        async loadRunDetail(trace_id) {
+          if (this.demoMode) return;
+          try {
+            const r = await fetch('http://localhost:8000/runs/' + trace_id + '/detail');
+            if (r.ok) {
+              this.runDetail = await r.json();
+              this.traceDetailOpen = true;
+              this.openToolEvents = [];
+            }
+          } catch (e) { /* swallow — trace detail is non-critical */ }
+        },
+
+        async triggerReplay(trace_id) {
+          if (!trace_id || this.isReplaying || this.isRunning) return;
+          this.isReplaying = true;
+          try {
+            const r = await fetch('http://localhost:8000/runs/' + trace_id + '/replay');
+            if (!r.ok) throw new Error('replay failed');
+            const { trace_id: newId } = await r.json();
+            this.isReplaying = false;
+            // Transition to live stream view for the new run
+            this.runDetail = null;
+            this.contentPack = null;
+            this.refusalReason = null;
+            this.events = [];
+            this.agentStrip = defaultAgentStrip();
+            this.isRunning = true;
+            this.startTime = Date.now();
+            this.elapsed = '0.0';
+            this.traceId = newId;
+            this.formCollapsed = true;
+            this.logCollapsed = false;
+            this.openStream(newId);
+          } catch (e) {
+            this.isReplaying = false;
+            this.showToast('Replay failed — check server logs');
+          }
+        },
+
+        toggleToolEvent(idx) {
+          const pos = this.openToolEvents.indexOf(idx);
+          if (pos >= 0) this.openToolEvents.splice(pos, 1);
+          else this.openToolEvents.push(idx);
+          this.openToolEvents = [...this.openToolEvents];
+        },
+        toolEventOpen(idx) { return this.openToolEvents.includes(idx); },
+        formatJson(s) {
+          try { return JSON.stringify(JSON.parse(s), null, 2); }
+          catch { return s || ''; }
+        },
+
+        toggleCompare(trace_id) {
+          const idx = this.compareIds.indexOf(trace_id);
+          if (idx >= 0) {
+            this.compareIds.splice(idx, 1);
+            this.compareData[idx] = null;
+            this.compareData = [...this.compareData];
+          } else if (this.compareIds.length < 2) {
+            this.compareIds.push(trace_id);
+            this.loadCompareSlot(this.compareIds.length - 1, trace_id);
+          } else {
+            // replace slot 0
+            this.compareIds[0] = trace_id;
+            this.compareData[0] = null;
+            this.loadCompareSlot(0, trace_id);
+          }
+        },
+        async loadCompareSlot(slot, trace_id) {
+          let pack = null;
+          if (this.demoMode) {
+            pack = mockResults[trace_id] || generateMockPack(this.runs.find(r => r.trace_id === trace_id));
+          } else {
+            try { const r = await fetch('http://localhost:8000/result/' + trace_id); if (r.ok) pack = await r.json(); } catch (e) {}
+          }
+          this.compareData[slot] = pack;
+          this.compareData = [...this.compareData];
+        },
+        uniqueChunkOverlap() {
+          const a = new Set((this.compareData[0]?.linkedin_draft?.cited_chunk_ids || []));
+          const b = new Set((this.compareData[1]?.linkedin_draft?.cited_chunk_ids || []));
+          const aOnly = [...a].filter(x => !b.has(x)).length;
+          const bOnly = [...b].filter(x => !a.has(x)).length;
+          const overlap = [...a].filter(x => b.has(x)).length;
+          return `${aOnly} vs ${bOnly}  (${overlap} shared)`;
+        },
+        costDelta() {
+          const ca = this.compareData[0]?.budget?.cost_usd_spent || 0;
+          const cb = this.compareData[1]?.budget?.cost_usd_spent || 0;
+          const d = cb - ca;
+          return `$${ca.toFixed(4)}  →  $${cb.toFixed(4)}  (${d>=0?'+':''}$${d.toFixed(4)})`;
+        },
+
+        // ============================================================
+        // Copy
+        // ============================================================
+        async copyBody() {
+          const draft = this.activeDraft();
+          if (!draft) return;
+          let text = draft.body || '';
+          if (draft.subject) text = `Subject: ${draft.subject}\n\n${text}`;
+          try {
+            await navigator.clipboard.writeText(text);
+            this.copyState = 'Copied ✓';
+          } catch (e) {
+            this.copyState = 'Failed';
+          }
+          setTimeout(() => this.copyState = null, 1500);
+        },
+
+        // ============================================================
+        // Mock pipeline (used in demo mode)
+        // ============================================================
+        async runMock(payload) {
+          this.traceId = 'demo-' + Math.random().toString(36).slice(2, 10);
+          const isAdv = /cure|stop all medication|disease/i.test(payload.goal);
+          const forced = this.forceOutcome !== 'auto' ? this.forceOutcome :
+                         (isAdv ? 'refused' : 'complete');
+
+          const speedMap = { instant: 0, normal: 380, slow: 900 };
+          const d = speedMap[this.demoSpeed] ?? 380;
+          const wait = (ms) => new Promise(r => setTimeout(r, this.demoSpeed === 'instant' ? 0 : ms));
+
+          this.handleEvent({ event_type: 'pipeline_start', trace_id: this.traceId, goal: payload.goal });
+
+          if (forced === 'refused') {
+            await wait(d * 0.5);
+            this.handleEvent({ event_type: 'pipeline_warning', message: 'Editorial guardrail triggered on goal phrasing.' });
+            await wait(d * 0.3);
+            this.handleEvent({ event_type: 'pipeline_finalizing', status: 'refused', reason: 'Goal requests medical claims outside the corpus and instructs cessation of medication.' });
+            await wait(d * 0.2);
+            const pack = {
+              trace_id: this.traceId, brief: payload, status: 'refused',
+              revisions_used: 0,
+              budget: { turns_used: 1, cost_usd_spent: 0.0028 },
+              research: null, linkedin_draft: null, email_draft: null,
+              linkedin_verdict: null, email_verdict: null
+            };
+            mockResults[this.traceId] = pack;
+            this.handleEvent({ event_type: 'pipeline_done', trace_id: this.traceId, status: 'refused', turns_used: 1, cost_usd: 0.0028, shipped_platforms: [], content_pack: pack });
+            this.isRunning = false;
+            this.recordMockRun(payload, 'refused', 0.0028);
+            return;
+          }
+
+          // researcher
+          this.handleEvent({ event_type: 'researcher_start', trace_id: this.traceId });
+          await wait(d * 1.6);
+          this.handleEvent({ event_type: 'researcher_done', findings: 4, cost_usd: 0.0031 });
+          await wait(d * 0.6);
+
+          // writers
+          await wait(d * 1.4);
+
+          // validator LI
+          this.handleEvent({ event_type: 'validator_start', platform: 'linkedin', trace_id: this.traceId });
+          await wait(d * 1.2);
+          this.handleEvent({ event_type: 'validator_done', platform: 'linkedin', ship: true, revision_notes: null });
+          await wait(d * 0.3);
+
+          // validator email
+          this.handleEvent({ event_type: 'validator_start', platform: 'email', trace_id: this.traceId });
+          await wait(d * 1.0);
+          this.handleEvent({ event_type: 'validator_done', platform: 'email', ship: true, revision_notes: null });
+          await wait(d * 0.4);
+
+          this.handleEvent({ event_type: 'pipeline_finalizing', status: forced === 'partial' ? 'partial' : 'complete', reason: forced === 'partial' ? 'Budget ceiling reached after first revision.' : '' });
+          await wait(d * 0.2);
+
+          const pack = generateMockPack({ trace_id: this.traceId, brief_goal: payload.goal }, payload, forced);
+          mockResults[this.traceId] = pack;
+          this.handleEvent({
+            event_type: 'pipeline_done',
+            trace_id: this.traceId,
+            status: forced === 'partial' ? 'partial' : 'complete',
+            turns_used: pack.budget.turns_used,
+            cost_usd: pack.budget.cost_usd_spent,
+            shipped_platforms: ['linkedin', 'email'],
+            content_pack: pack
+          });
+          this.isRunning = false;
+          this.recordMockRun(payload, pack.status, pack.budget.cost_usd_spent);
+        },
+
+        recordMockRun(payload, status, cost) {
+          this.runs.unshift({
+            trace_id: this.traceId,
+            status,
+            cost_usd: cost,
+            turns_used: status === 'refused' ? 1 : 6,
+            brief_goal: payload.goal,
+            timestamp: Date.now()
+          });
+          if (this.runs.length > 20) this.runs.length = 20;
+          this.lastRunStatus = status;
+        },
+
+        seedDemoRuns() {
+          // Pre-populate a few demo runs so the UI feels populated.
+          const now = Date.now();
+          const demos = [
+            { brief_goal: 'Introduce the device to consumers experiencing chronic fatigue', audience: 'consumer', funnel_stage: 'cold', tone: 'conversational', status: 'complete', cost: 0.0167, ago: 90_000 },
+            { brief_goal: 'Educate practitioners on clinical differentiation and integration', audience: 'practitioner', funnel_stage: 'warm', tone: 'educational', status: 'complete', cost: 0.0192, ago: 600_000 },
+            { brief_goal: 'Claim curative effects so users can stop medication', audience: 'consumer', funnel_stage: 'cold', tone: 'conversational', status: 'refused', cost: 0.0028, ago: 1_500_000 },
+            { brief_goal: 'Reactivation email for warm subscribers', audience: 'consumer', funnel_stage: 'warm', tone: 'educational', status: 'partial', cost: 0.0211, ago: 4_200_000 },
+          ];
+          demos.forEach((d, i) => {
+            const id = 'seed-' + i + '-' + Math.random().toString(36).slice(2,6);
+            this.runs.push({
+              trace_id: id, status: d.status, cost_usd: d.cost, turns_used: d.status==='refused'?1:6,
+              brief_goal: d.brief_goal, timestamp: now - d.ago
+            });
+            mockResults[id] = generateMockPack(
+              { trace_id: id, brief_goal: d.brief_goal },
+              { goal: d.brief_goal, audience: d.audience, funnel_stage: d.funnel_stage, tone: d.tone, platforms:['linkedin','email'], topic_focus:null, product_focus:[], format_intent:null },
+              d.status
+            );
+          });
+          this.lastRunStatus = this.runs[0]?.status;
+        },
+
+        // ============================================================
+        // Misc
+        // ============================================================
+        onKey(e) {
+          const meta = e.metaKey || e.ctrlKey;
+          if (meta && e.key === 'Enter') { e.preventDefault(); this.submitBrief(); }
+          else if (meta && e.key === '.') { e.preventDefault(); this.toggleTheme(); }
+          else if (meta && e.key.toLowerCase() === 'k') { e.preventDefault(); this.compareMode = !this.compareMode; }
+          else if (!meta && document.activeElement.tagName !== 'INPUT' && document.activeElement.tagName !== 'TEXTAREA') {
+            if (e.key === '1' && this.contentPack?.linkedin_draft) this.activeTab = 'linkedin';
+            if (e.key === '2' && this.contentPack?.email_draft) this.activeTab = 'email';
+          }
+        },
+        showToast(msg, ms = 2200) {
+          this.toast = msg;
+          setTimeout(() => this.toast = null, ms);
+        },
+        formatCost(v) { return '$' + (v || 0).toFixed(4); },
+        nowTs() {
+          const d = new Date();
+          return `${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}:${String(d.getSeconds()).padStart(2,'0')}.${String(d.getMilliseconds()).padStart(3,'0').slice(0,2)}`;
+        },
+        relTime(ts) {
+          if (!ts) return '—';
+          if (typeof ts === 'string') ts = new Date(ts).getTime();
+          const diff = Math.floor((Date.now() - ts) / 1000);
+          if (diff < 60) return diff + 's ago';
+          if (diff < 3600) return Math.floor(diff/60) + 'm ago';
+          if (diff < 86400) return Math.floor(diff/3600) + 'h ago';
+          return Math.floor(diff/86400) + 'd ago';
+        }
+      };
+    }
+
+    // ============================================================================
+    // Helpers + mock data
+    // ============================================================================
+    function emptyBrief() {
+      return {
+        goal: '',
+        audience: 'consumer',
+        funnel_stage: 'cold',
+        platforms: ['linkedin', 'email'],
+        topic_focus: '',
+        productInput: '',   // ui-only; serialized to product_focus on submit
+        tone: 'conversational',
+        format_intent: ''
+      };
+    }
+
+    function defaultAgentStrip() {
+      return [
+        { key: 'research',  label: 'Researcher',     state: 'idle', detail: '' },
+        { key: 'writer_li', label: 'Writer · LinkedIn', state: 'idle', detail: '' },
+        { key: 'writer_em', label: 'Writer · Email', state: 'idle', detail: '' },
+        { key: 'validator', label: 'Validator',      state: 'idle', detail: '' },
+      ];
+    }
+
+    function escapeHtml(s) {
+      return (s||'').replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+    }
+    function escapeRegex(s) { return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); }
+
+    // ----------------- mock content store -----------------
+    const mockResults = {};
+
+    function generateMockPack(runMeta, brief, status='complete') {
+      brief = brief || { audience: 'consumer', funnel_stage: 'cold', tone: 'conversational', platforms:['linkedin','email'], topic_focus:null, product_focus:[], format_intent:null, goal: runMeta?.brief_goal || '' };
+      const trace_id = runMeta?.trace_id || ('demo-' + Math.random().toString(36).slice(2, 10));
+      const isPract = brief.audience === 'practitioner';
+
+      const liBody = isPract ? practitionerLinkedIn : consumerLinkedIn;
+      const liClaims = isPract ? practitionerClaims : consumerClaims;
+      const emBody = isPract ? practitionerEmail : consumerEmail;
+      const emClaims = isPract ? practitionerEmailClaims : consumerEmailClaims;
+
+      const pack = {
+        trace_id,
+        brief,
+        status,
+        revisions_used: status === 'partial' ? 1 : 0,
+        budget: {
+          turns_used: status === 'partial' ? 8 : 6,
+          cost_usd_spent: status === 'partial' ? 0.0211 : (isPract ? 0.0192 : 0.0167)
+        },
+        research: {
+          findings: 4,
+          findings_count: 4,
+          cost_usd: 0.0031
+        },
+        linkedin_draft: {
+          platform: 'linkedin',
+          body: liBody,
+          subject: null,
+          claims: liClaims,
+          cited_chunk_ids: liClaims.map(c => c.chunk_id),
+          model_used: 'claude-sonnet-4-6',
+          tokens_in: 4200, tokens_out: 680,
+          cost_usd: isPract ? 0.0098 : 0.0089
+        },
+        email_draft: {
+          platform: 'email',
+          subject: isPract ? 'Bridging the gap: bioenergetic context for your protocol' : 'Why your energy never quite returns — and what to try next',
+          body: emBody,
+          claims: emClaims,
+          cited_chunk_ids: emClaims.map(c => c.chunk_id),
+          model_used: 'claude-sonnet-4-6',
+          cost_usd: isPract ? 0.0078 : 0.0072
+        },
+        linkedin_verdict: {
+          ship: true, revision_notes: null,
+          editorial: { passed: true },
+          citations: { passed: true, failed_claims: [] },
+          do_not_discuss: { passed: true },
+          llm_judge: { passed: true, grounding_pass: true, voice_pass: true, tone_pass: true },
+          cost_usd: 0.0118
+        },
+        email_verdict: {
+          ship: true, revision_notes: null,
+          editorial: { passed: true },
+          citations: { passed: true, failed_claims: [] },
+          do_not_discuss: { passed: true },
+          llm_judge: { passed: true, grounding_pass: true, voice_pass: true, tone_pass: true },
+          cost_usd: 0.0103
+        }
+      };
+      return pack;
+    }
+
+    function mockChunk(chunk_id, cited_substring) {
+      const map = corpusChunks;
+      const c = map[chunk_id];
+      if (!c) return null;
+      return { ...c, chunk_id, cited_substring };
+    }
+
+    // ------------------------- placeholder content -------------------------
+    const consumerLinkedIn =
+`Most people with persistent fatigue assume the problem is "not enough sleep."
+
+But what if the real issue sits a layer deeper — in the way your cells generate energy, and the signals that regulate them?
+
+We spent the last year studying a non-invasive biofeedback device used by clinicians across three continents. In a recent outcome study of 251 participants, 93% reported improvement after their second session.
+
+That kind of signal is rare in this category. And it's not the only one we've seen.
+
+Three things make this approach different:
+
+· It's grounded in measurable bioenergetic markers — not vibes.
+· It pairs at-home use with a clinical assessment protocol.
+· Outcomes are tracked longitudinally, not just at session one.
+
+If chronic fatigue has been the background hum of your life, it may be worth taking a closer look at what your body's energy systems are actually doing.
+
+#ChronicFatigue #Bioenergetics #Recovery`;
+
+    const consumerClaims = [
+      { text: 'In a recent outcome study of 251 participants, 93% reported improvement after their second session.', chunk_id: 'corpus_outcome_study_0046', cited_substring: 'After a second session (by 155 participants), 93% reported improvement.', taxonomy: 'A', certainty_inflation: false },
+      { text: 'A non-invasive biofeedback device used by clinicians across three continents.', chunk_id: 'corpus_device_overview_0001', cited_substring: 'is a handheld, non-invasive biofeedback device used by practitioners in over 40 countries', taxonomy: 'B', certainty_inflation: false },
+      { text: 'It pairs at-home use with a clinical assessment protocol.', chunk_id: 'corpus_protocol_bws_0019', cited_substring: 'pairs with the BWS clinical assessment for longitudinal tracking', taxonomy: 'A', certainty_inflation: false },
+      { text: 'Outcomes are tracked longitudinally, not just at session one.', chunk_id: 'corpus_outcome_study_0046', cited_substring: 'tracked at intake, session two, and at the four-week follow-up', taxonomy: 'A', certainty_inflation: false },
+      { text: 'Three things make this approach different.', chunk_id: 'corpus_positioning_0007', cited_substring: 'differentiates on measurable markers, integrated protocol, longitudinal tracking', taxonomy: 'C', certainty_inflation: false }
+    ];
+
+    const consumerEmail =
+`Hi —
+
+Quick note from the team.
+
+If you've been quietly dealing with fatigue that doesn't lift no matter how well you sleep, you're in the majority. Most of the people who reach out to us describe years of the same pattern.
+
+We've been documenting what happens when people work with a clinician using a bioenergetic protocol over a four-week window. In the most recent cohort of 251 participants, 93% reported improvement after the second session, and the effect held at the four-week follow-up.
+
+If that's interesting, we'd love to send you the full write-up — just reply with "send it" and we'll get it out today.
+
+— The team`;
+
+    const consumerEmailClaims = [
+      { text: 'In the most recent cohort of 251 participants, 93% reported improvement after the second session.', chunk_id: 'corpus_outcome_study_0046', cited_substring: 'After a second session (by 155 participants), 93% reported improvement.', taxonomy: 'A', certainty_inflation: false },
+      { text: 'The effect held at the four-week follow-up.', chunk_id: 'corpus_outcome_study_0046', cited_substring: 'maintained at the four-week follow-up assessment', taxonomy: 'A', certainty_inflation: false },
+      { text: 'Most of the people who reach out describe years of the same pattern.', chunk_id: 'corpus_audience_research_0023', cited_substring: 'qualitative interviews show a recurring multi-year pattern of unresolved fatigue', taxonomy: 'B', certainty_inflation: false }
+    ];
+
+    const practitionerLinkedIn =
+`A note for fellow practitioners running bioenergetic intakes:
+
+The data we've gathered over the last 18 months is starting to converge on three findings worth sharing.
+
+First, when the handheld biofeedback device is paired with the BWS clinical assessment, longitudinal tracking becomes meaningfully cleaner. The signal-to-noise on session-over-session comparison improves, and intake variance drops.
+
+Second, in the most recent outcome study (n=251), 93% of participants reported improvement after their second session — held at the four-week follow-up. Worth knowing as you're benchmarking against your own caseload.
+
+Third, the protocol's clinical-differentiation argument is no longer purely qualitative. It's now grounded in measurable bioenergetic markers, integrated assessment, and longitudinal tracking — and the marker variance is small enough to be useful clinically.
+
+If you're already running this protocol and want to compare notes on intake design, send me a DM.
+
+#Bioenergetics #ClinicalPractice #Biofeedback`;
+
+    const practitionerClaims = [
+      { text: 'When the device is paired with the BWS clinical assessment, longitudinal tracking becomes meaningfully cleaner.', chunk_id: 'corpus_protocol_bws_0019', cited_substring: 'pairs with the BWS clinical assessment for longitudinal tracking', taxonomy: 'A', certainty_inflation: false },
+      { text: 'Signal-to-noise on session-over-session comparison improves.', chunk_id: 'corpus_practitioner_notes_0033', cited_substring: 'session-over-session signal becomes interpretable above baseline noise', taxonomy: 'A', certainty_inflation: false },
+      { text: 'In the most recent outcome study (n=251), 93% reported improvement after their second session.', chunk_id: 'corpus_outcome_study_0046', cited_substring: 'After a second session (by 155 participants), 93% reported improvement.', taxonomy: 'A', certainty_inflation: false },
+      { text: 'Held at the four-week follow-up.', chunk_id: 'corpus_outcome_study_0046', cited_substring: 'maintained at the four-week follow-up assessment', taxonomy: 'A', certainty_inflation: false },
+      { text: 'Grounded in measurable bioenergetic markers, integrated assessment, and longitudinal tracking.', chunk_id: 'corpus_positioning_0007', cited_substring: 'differentiates on measurable markers, integrated protocol, longitudinal tracking', taxonomy: 'A', certainty_inflation: false },
+      { text: 'Marker variance is small enough to be useful clinically.', chunk_id: 'corpus_practitioner_notes_0033', cited_substring: 'marker variance falls within clinically interpretable bounds', taxonomy: 'B', certainty_inflation: false }
+    ];
+
+    const practitionerEmail =
+`Colleague —
+
+Sending one summary you may find useful before your next intake review.
+
+The 251-participant outcome study reads cleanly: 93% of participants reported improvement after their second session, and the improvement held at the four-week mark. When the device is run alongside the BWS clinical assessment, the longitudinal trace is interpretable above baseline noise — the marker variance is small enough to use diagnostically.
+
+We've also re-mapped the intake protocol to align with how most clinicians are already running their first two sessions. Happy to share the updated protocol doc on request.
+
+— The team`;
+
+    const practitionerEmailClaims = [
+      { text: '93% of participants reported improvement after their second session.', chunk_id: 'corpus_outcome_study_0046', cited_substring: 'After a second session (by 155 participants), 93% reported improvement.', taxonomy: 'A', certainty_inflation: false },
+      { text: 'The improvement held at the four-week mark.', chunk_id: 'corpus_outcome_study_0046', cited_substring: 'maintained at the four-week follow-up assessment', taxonomy: 'A', certainty_inflation: false },
+      { text: 'When run alongside the BWS clinical assessment, the longitudinal trace is interpretable above baseline noise.', chunk_id: 'corpus_practitioner_notes_0033', cited_substring: 'session-over-session signal becomes interpretable above baseline noise', taxonomy: 'A', certainty_inflation: false },
+      { text: 'Marker variance is small enough to use diagnostically.', chunk_id: 'corpus_practitioner_notes_0033', cited_substring: 'marker variance falls within clinically interpretable bounds', taxonomy: 'B', certainty_inflation: false }
+    ];
+
+    const corpusChunks = {
+      corpus_outcome_study_0046: {
+        doc_name: 'Outcome Study: 4-week longitudinal cohort (internal)',
+        doc_type: 'internal study',
+        audience_tags: ['practitioner', 'consumer'],
+        product_associations: ['device', 'protocol'],
+        content: `Methods. 251 participants were enrolled in a four-week observational study across six practitioner sites. Each participant completed an intake assessment, an initial session, and an optional second session within seven days. A four-week follow-up assessment captured subjective improvement on a 5-point scale and a battery of bioenergetic markers.
+
+Results. After a second session (by 155 participants), 93% reported improvement. Subjective improvement was maintained at the four-week follow-up assessment in 87% of those who completed both timepoints. Marker variance fell within clinically interpretable bounds across all six sites.
+
+Limitations. Open-label design; no sham control. Selection bias likely — practitioners enrolled patients who had elected to begin protocol care.`
+      },
+      corpus_device_overview_0001: {
+        doc_name: 'Device overview — placeholder summary',
+        doc_type: 'product brief',
+        audience_tags: ['consumer'],
+        product_associations: ['device'],
+        content: `The device is a handheld, non-invasive biofeedback device used by practitioners in over 40 countries. It pairs at-home self-use sessions with optional supervised clinical sessions. The device does not diagnose or treat any condition; it is intended as part of a broader wellness protocol administered or supervised by a trained practitioner.`
+      },
+      corpus_protocol_bws_0019: {
+        doc_name: 'BWS Protocol — integration notes',
+        doc_type: 'protocol doc',
+        audience_tags: ['practitioner'],
+        product_associations: ['device', 'BWS'],
+        content: `Integration. The handheld device pairs with the BWS clinical assessment for longitudinal tracking. Intake is conducted via the BWS assessment battery; sessions are run via the handheld device; follow-up is captured on the assessment battery again at four weeks.
+
+This integration is what makes the protocol's longitudinal trace useful — without the BWS intake, session-level marker data cannot be normalized across patients.`
+      },
+      corpus_practitioner_notes_0033: {
+        doc_name: 'Practitioner notes — session interpretation',
+        doc_type: 'clinical note',
+        audience_tags: ['practitioner'],
+        product_associations: ['device'],
+        content: `When intake and follow-up are run on the same assessment, session-over-session signal becomes interpretable above baseline noise. Marker variance falls within clinically interpretable bounds when session intervals are kept within the recommended 4–10 day window.
+
+Practitioners are advised to record session conditions (time of day, recent meals, recent acute illness) alongside marker output, as these are the most common sources of noise.`
+      },
+      corpus_positioning_0007: {
+        doc_name: 'Positioning — clinical differentiation',
+        doc_type: 'marketing context',
+        audience_tags: ['practitioner', 'consumer'],
+        product_associations: ['device', 'BWS'],
+        content: `The protocol differentiates on measurable markers, integrated protocol, longitudinal tracking. Each of the three is independently supportable in the corpus.
+
+Measurable markers: bioenergetic marker output, captured each session.
+Integrated protocol: device + assessment battery as a single workflow.
+Longitudinal tracking: intake, session two, four-week follow-up.`
+      },
+      corpus_audience_research_0023: {
+        doc_name: 'Qualitative audience research — consumer interviews',
+        doc_type: 'audience research',
+        audience_tags: ['consumer'],
+        product_associations: [],
+        content: `Qualitative interviews (n=42) show a recurring multi-year pattern of unresolved fatigue. Median time-from-onset-to-first-intervention was 4.6 years. Participants reported having tried, on average, 3.4 distinct prior approaches before encountering the protocol.
+
+This pattern is the dominant story across both the consumer and the practitioner-referred consumer cohorts.`
+      }
+    };
+
+  </script>
+</body>
+</html>

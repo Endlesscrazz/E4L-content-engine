@@ -27,7 +27,8 @@ from pathlib import Path
 from typing import Any
 
 from app.clients import AnthropicClient, BraveClient, GeminiEmbedder
-from app.models import ContentBrief, ResearchFinding, ResearchResult
+from app.models import AgentTelemetry, ContentBrief, ResearchFinding, ResearchResult
+from app.observability import write_agent_call
 
 logger = logging.getLogger(__name__)
 
@@ -190,6 +191,7 @@ def run_researcher(
     brave_client: BraveClient,
     db_conn: sqlite3.Connection,
     trace_id: str,
+    obs_conn: sqlite3.Connection | None = None,
 ) -> ResearchResult:
     """
     Haiku 4.5 agentic loop. Returns ResearchResult with scored web findings.
@@ -215,9 +217,12 @@ def run_researcher(
     messages: list[dict[str, Any]] = [{"role": "user", "content": initial_message}]
     actions_used = 0
     cost_usd = 0.0
+    tokens_in_total = 0
+    tokens_out_total = 0
     findings: list[ResearchFinding] = []
     consecutive_drops = 0
     reformulated = False
+    _loop_start_ms = int(__import__("time").time() * 1000)
 
     system_prompt = _load_system_prompt()
 
@@ -230,6 +235,8 @@ def run_researcher(
             max_tokens=1024,
         )
         cost_usd += turn_cost
+        tokens_in_total += response.usage.input_tokens
+        tokens_out_total += response.usage.output_tokens
         messages.append({"role": "assistant", "content": response.content})
 
         if response.stop_reason == "end_turn":
@@ -291,6 +298,7 @@ def run_researcher(
                             "[%s] Researcher giving up after reformulation: still below threshold",
                             trace_id,
                         )
+                        _write_researcher_obs(obs_conn, trace_id, tokens_in_total, tokens_out_total, cost_usd, actions_used, _loop_start_ms)
                         return ResearchResult(
                             findings=findings,
                             no_context_reason="no trend context available",
@@ -311,6 +319,8 @@ def run_researcher(
         if tool_results:
             messages.append({"role": "user", "content": tool_results})
 
+    _write_researcher_obs(obs_conn, trace_id, tokens_in_total, tokens_out_total, cost_usd, actions_used, _loop_start_ms)
+
     if not findings:
         return ResearchResult(
             findings=[],
@@ -323,4 +333,31 @@ def run_researcher(
         findings=findings,
         actions_used=actions_used,
         cost_usd=round(cost_usd, 6),
+    )
+
+
+def _write_researcher_obs(
+    obs_conn: sqlite3.Connection | None,
+    trace_id: str,
+    tokens_in: int,
+    tokens_out: int,
+    cost_usd: float,
+    tool_calls: int,
+    start_ms: int,
+) -> None:
+    if obs_conn is None:
+        return
+    latency_ms = int(__import__("time").time() * 1000) - start_ms
+    write_agent_call(
+        obs_conn,
+        AgentTelemetry(
+            trace_id=trace_id,
+            agent_name="researcher",
+            model=RESEARCHER_MODEL,
+            tokens_in=tokens_in,
+            tokens_out=tokens_out,
+            cost_usd=round(cost_usd, 6),
+            latency_ms=latency_ms,
+            tool_calls=tool_calls,
+        ),
     )
