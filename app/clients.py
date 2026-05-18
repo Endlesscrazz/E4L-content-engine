@@ -103,15 +103,15 @@ class AnthropicClient:
                 cost = self._compute_cost(model, response)
                 return response, cost
 
-            except anthropic.RateLimitError:
+            except (anthropic.RateLimitError, anthropic.OverloadedError):
                 if attempt == _MAX_ATTEMPTS - 1:
                     raise
                 delay = _jitter_delay(attempt)
-                logger.warning("Anthropic 429 — attempt %d/%d, sleeping %.1fs", attempt + 1, _MAX_ATTEMPTS, delay)
+                logger.warning("Anthropic 429/529 — attempt %d/%d, sleeping %.1fs", attempt + 1, _MAX_ATTEMPTS, delay)
                 time.sleep(delay)
 
             except anthropic.APIStatusError as exc:
-                # Non-429 API errors are not retried — surface immediately.
+                # Non-429/529 API errors are not retried — surface immediately.
                 logger.error("Anthropic API error %s: %s", exc.status_code, exc.message)
                 raise
 
