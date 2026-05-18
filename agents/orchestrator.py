@@ -594,6 +594,25 @@ async def _dispatch_tool(
 
         draft = drafts[platform]
 
+        # Fast-fail: zero citations when corpus chunks WERE available means every
+        # health/product claim is ungrounded. Skip Opus (3× expensive) and return
+        # revision_notes directly — cheaper and gives the Writer a precise error.
+        # Guard is skipped if corpus_chunks is empty (Type-C-only brief) so the
+        # writer isn't penalised for a legitimately uncitable request.
+        if platform == Platform.LINKEDIN and not draft.cited_chunk_ids and corpus_chunks:
+            logger.warning("[%s] LinkedIn draft has zero citations — fast-fail before Opus", trace_id)
+            on_event("validator_done", {
+                "platform": platform.value,
+                "ship": False,
+                "revision_notes": "Zero citations: every product and health claim must cite a chunk_id from the valid chunk IDs provided. A draft with no cited_chunk_ids is an automatic fail. Rewrite with citations anchored to the corpus chunks.",
+            })
+            return {
+                "ship": False,
+                "platform": platform.value,
+                "revision_notes": "Zero citations: every product and health claim must cite a chunk_id from the valid chunk IDs provided. A draft with no cited_chunk_ids is an automatic fail. Rewrite with citations anchored to the corpus chunks.",
+                "message": "Draft rejected. Pass revision_notes to call_writer to revise.",
+            }, False, "", ""
+
         # Guard: scan draft body for injection patterns before passing to Validator.
         # A hallucinating or adversarially-influenced writer could embed directives
         # in the draft text that would enter the Validator's context window.

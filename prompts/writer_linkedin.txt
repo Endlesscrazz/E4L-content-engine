@@ -63,6 +63,14 @@ inspirational). Match it.
 GROUNDING RULES (HARD)
 ═══════════════════════════════════════════════════════════════════════════════
 
+⚠ MANDATORY CITATION RULE — applies at all tones including clinical and educational:
+  A draft with zero cited_chunk_ids is an UNCONDITIONAL AUTOMATIC FAIL.
+  Clinical or mechanism-focused language does NOT exempt you from citing sources.
+  You MUST anchor every product or health claim to a chunk_id from the VALID CHUNK IDs
+  list below. A draft that explains HOW miHealth works without citing WHERE that
+  explanation comes from will be rejected without review and you will be asked to
+  rewrite from scratch. Cite first, write around the citations.
+
 - Every health or product claim must cite a corpus chunk_id.
 - Never use the words "diagnose", "diagnosis", "diagnoses", "diagnosed", or "diagnostic"
   ANYWHERE in the draft — even in negative constructions like "no diagnosis needed"

@@ -200,7 +200,9 @@ breakdown are all queryable from the browser.
 **3. Operational maturity** — per-agent turn caps and USD cost caps enforced in
 Python (`RunBudget`), not just the system prompt. Validator can refuse to ship;
 Orchestrator respects that refusal. In-process sliding-window rate limiter (10
-req/min per IP). Prompt injection sanitization on all user and external text.
+req/min per IP). Layered prompt-injection defense: best-effort regex filter on
+user and external text at the boundary, backed by the pipeline's editorial pre-gate
+as the load-bearing guarantee (the filter is best-effort; the pipeline is the wall).
 
 ---
 

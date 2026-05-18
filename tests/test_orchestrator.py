@@ -702,3 +702,123 @@ def test_orchestrator_obs_writes(brief, mock_anthropic, mock_gemini, mock_brave,
     assert runs[0]["trace_id"] == "test_obs_001"
     assert runs[0]["status"] == "complete"
     obs.close()
+
+
+def test_orchestrator_end_turn_fallback_refusal_sets_reason(
+    brief, mock_anthropic, mock_gemini, mock_brave, mock_corpus_conn
+):
+    """R12: end_turn keyword-fallback refusal path must always set a non-empty reason."""
+    # Haiku responds on turn 1 with a text refusal (no tool call) containing a
+    # refusal keyword — simulates the Orchestrator refusing an adversarial brief
+    # via plain text instead of a finalize() tool call.
+    refusal_text_block = MagicMock()
+    refusal_text_block.text = "I cannot generate content that claims to cure disease. This violates editorial policy."
+    refusal_msg = MagicMock()
+    refusal_msg.stop_reason = "end_turn"
+    refusal_msg.content = [refusal_text_block]
+    refusal_msg.usage.input_tokens = 50
+    refusal_msg.usage.output_tokens = 30
+    mock_anthropic.create.return_value = (refusal_msg, 0.0003)
+
+    events: list[dict] = []
+
+    def capture(event_type, payload):
+        events.append({"type": event_type, **payload})
+
+    pack = asyncio.run(run_orchestrator(
+        brief=brief,
+        anthropic_client=mock_anthropic,
+        gemini_embedder=mock_gemini,
+        brave_client=mock_brave,
+        corpus_conn=mock_corpus_conn,
+        trace_id="test_r12_fallback",
+        on_event=capture,
+    ))
+
+    assert pack.status == "refused", f"Expected refused, got {pack.status}"
+    assert pack.finalize_reason, "finalize_reason must not be empty on fallback refusal"
+    assert pack.finalize_reason != "turn cap reached without finalize call", (
+        "fallback refusal should set an explanatory reason, not the generic cap message"
+    )
+    # pipeline_finalizing event should carry the reason to the UI
+    finalizing_events = [e for e in events if e["type"] == "pipeline_finalizing"]
+    assert finalizing_events, "pipeline_finalizing event must be emitted"
+    assert finalizing_events[0].get("reason"), "pipeline_finalizing event must include a non-empty reason"
+
+
+def test_orchestrator_linkedin_zero_citations_fast_fails_before_opus(
+    brief, mock_anthropic, mock_gemini, mock_brave, mock_corpus_conn
+):
+    """R11: LinkedIn draft with zero citations + non-empty corpus fast-fails without calling Opus."""
+    # Pipeline: write both → fast-fail LinkedIn (zero cites) → revision → both succeed
+    chunk = MagicMock()
+    chunk.chunk_id = "mihealth_001"
+
+    responses = [
+        # Turn 1: write both platforms in parallel
+        _make_haiku_response([
+            {"name": "call_writer", "input": {"platform": "linkedin"}, "id": "tw1"},
+            {"name": "call_writer", "input": {"platform": "email"}, "id": "tw2"},
+        ]),
+        # Turn 2: validate both
+        _make_haiku_response([
+            {"name": "call_validator", "input": {"platform": "linkedin"}, "id": "tv1"},
+            {"name": "call_validator", "input": {"platform": "email"}, "id": "tv2"},
+        ]),
+        # Turn 3: revise LinkedIn after fast-fail rejection
+        _make_haiku_response([
+            {"name": "call_writer", "input": {"platform": "linkedin", "revision_notes": "Zero citations"}, "id": "tw3"},
+        ]),
+        # Turn 4: validate revised LinkedIn
+        _make_haiku_response([
+            {"name": "call_validator", "input": {"platform": "linkedin"}, "id": "tv3"},
+        ]),
+        # Turn 5: finalize
+        _make_haiku_response([
+            {"name": "finalize", "input": {"status": "complete", "reason": "both shipped"}, "id": "tfin"},
+        ]),
+    ]
+    mock_anthropic.create.side_effect = responses
+
+    validator_call_count = 0
+
+    def counting_validator(**kwargs):
+        nonlocal validator_call_count
+        validator_call_count += 1
+        return _shipped_verdict(kwargs["draft"].platform)
+
+    # Writer returns zero-citation LinkedIn first, then a cited revision
+    writer_calls = 0
+
+    def mock_writer_fn(**kwargs):
+        nonlocal writer_calls
+        writer_calls += 1
+        platform = kwargs["platform"]
+        if platform == Platform.LINKEDIN and writer_calls == 1:
+            # First LinkedIn call: zero citations — triggers fast-fail
+            return Draft(platform=Platform.LINKEDIN, body="body", claims=[], cited_chunk_ids=[])
+        if platform == Platform.EMAIL:
+            return Draft(platform=Platform.EMAIL, subject="s", body="body", claims=[], cited_chunk_ids=[])
+        # Revised LinkedIn: now includes a citation
+        return Draft(platform=Platform.LINKEDIN, body="cited body", claims=[], cited_chunk_ids=["mihealth_001"])
+
+    with (
+        patch("agents.orchestrator._fetch_corpus", return_value=([chunk], [])),
+        patch("agents.orchestrator.run_writer", side_effect=mock_writer_fn),
+        patch("agents.orchestrator.validate_draft", side_effect=counting_validator),
+    ):
+        pack = asyncio.run(run_orchestrator(
+            brief=brief,
+            anthropic_client=mock_anthropic,
+            gemini_embedder=mock_gemini,
+            brave_client=mock_brave,
+            corpus_conn=mock_corpus_conn,
+            trace_id="test_r11_zero_cites",
+        ))
+
+    # Opus validator was NOT called for the first zero-citation LinkedIn draft
+    # (fast-fail skipped it). It WAS called for email and the revised LinkedIn.
+    assert validator_call_count == 2, (
+        f"Expected 2 Opus calls (email + revised LI), got {validator_call_count} — "
+        "fast-fail should have skipped the first zero-citation LI draft"
+    )
