@@ -286,3 +286,44 @@ def test_theme_toggle(page: Page) -> None:
             page.wait_for_timeout(200)
 
     assert errors == [], f"JS error during theme toggle: {errors}"
+
+
+# ─── I. Origin regression (127.0.0.1) ────────────────────────────────────────
+
+ALT_ORIGIN = "http://127.0.0.1:8000"
+
+
+def test_live_mode_on_127_origin(page: Page) -> None:
+    """
+    Page served via 127.0.0.1 must reach live mode, not Mock mode.
+    Before the relative-URL fix, fetch('http://localhost:8000/runs') was
+    cross-origin from 127.0.0.1 → no CORS → checkBackend() catch → demoMode=true.
+
+    Reads demoMode from Alpine.js component state directly — the badge span
+    lives in a collapsed tweaks panel and is hidden regardless of demoMode.
+    """
+    page.goto(f"{ALT_ORIGIN}/static/index.html", wait_until="networkidle")
+    page.wait_for_timeout(1500)  # give checkBackend probe time to resolve
+
+    demo_mode = page.evaluate("""() => {
+        const root = document.querySelector('[x-data]');
+        if (!root) return null;
+        const stack = root._x_dataStack;
+        if (stack && stack.length > 0) return stack[0].demoMode;
+        return null;
+    }""")
+    assert demo_mode is False, (
+        f"Expected demoMode=false on 127.0.0.1 origin, got {demo_mode!r}. "
+        "App is in Mock mode — relative-URL fix may not be working."
+    )
+
+
+def test_runs_api_reachable_from_127_origin(page: Page) -> None:
+    """
+    /runs returns 200 from the 127.0.0.1 page context, confirming relative
+    URLs resolve correctly regardless of hostname.
+    """
+    page.goto(f"{ALT_ORIGIN}/static/index.html", wait_until="networkidle")
+
+    status = page.evaluate("() => fetch('/runs').then(r => r.status)")
+    assert status == 200, f"/runs returned {status} from 127.0.0.1 origin"

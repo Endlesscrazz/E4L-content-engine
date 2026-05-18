@@ -1201,7 +1201,7 @@
       <div class="dot-divider my-2"></div>
 
       <div class="text-fg-3" style="font-size:11px; line-height:1.45">
-        <span x-show="!demoMode">Wired to <span class="font-mono">localhost:8000</span>. Auto-switches to Mock if backend is unreachable.</span>
+        <span x-show="!demoMode">Wired to this server (same origin). Auto-switches to Mock if backend is unreachable.</span>
         <span x-show="demoMode">Mock mode simulates SSE locally — useful for static demos or offline.</span>
       </div>
     </div>
@@ -1323,7 +1323,7 @@
           try {
             const ctrl = new AbortController();
             const t = setTimeout(() => ctrl.abort(), 1200);
-            const r = await fetch('http://localhost:8000/runs', { signal: ctrl.signal });
+            const r = await fetch('/runs', { signal: ctrl.signal });
             clearTimeout(t);
             if (r.ok) {
               this.backendOnline = true;
@@ -1348,7 +1348,7 @@
           if (this.demoMode) { return; } // demo history persists in state
           this.runsLoading = true;
           try {
-            const r = await fetch('http://localhost:8000/runs');
+            const r = await fetch('/runs');
             if (r.ok) {
               this.runs = await r.json();
               if (this.runs.length > 0) this.lastRunStatus = this.runs[0].status;
@@ -1360,7 +1360,7 @@
         async deleteRun(trace_id) {
           if (this.demoMode) { this.runs = this.runs.filter(r => r.trace_id !== trace_id); return; }
           try {
-            const resp = await fetch('http://localhost:8000/runs/' + trace_id, { method: 'DELETE' });
+            const resp = await fetch('/runs/' + trace_id, { method: 'DELETE' });
             if (resp.status === 409) { this.showToast('Cannot delete a run in progress.'); return; }
             if (!resp.ok) return;
           } catch (e) { return; }
@@ -1436,7 +1436,7 @@
           }
 
           try {
-            const r = await fetch('http://localhost:8000/generate', {
+            const r = await fetch('/generate', {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify(payload)
@@ -1453,7 +1453,7 @@
         },
 
         openStream(traceId) {
-          const es = new EventSource('http://localhost:8000/stream/' + traceId);
+          const es = new EventSource('/stream/' + traceId);
           es.onmessage = (e) => {
             try {
               const data = JSON.parse(e.data);
@@ -1628,7 +1628,7 @@
             return;
           }
           try {
-            const r = await fetch('http://localhost:8000/corpus/chunk/' + encodeURIComponent(chunk_id));
+            const r = await fetch('/corpus/chunk/' + encodeURIComponent(chunk_id));
             if (!r.ok) throw new Error('not found');
             const data = await r.json();
             data.cited_substring = cited_substring;
@@ -1660,7 +1660,7 @@
           }
 
           try {
-            const r = await fetch('http://localhost:8000/result/' + trace_id);
+            const r = await fetch('/result/' + trace_id);
             if (r.status === 202) { this.showToast('Run still in progress'); return; }
             if (!r.ok) throw new Error('not found');
             this.contentPack = await r.json();
@@ -1677,7 +1677,7 @@
         async loadRunDetail(trace_id) {
           if (this.demoMode) return;
           try {
-            const r = await fetch('http://localhost:8000/runs/' + trace_id + '/detail');
+            const r = await fetch('/runs/' + trace_id + '/detail');
             if (r.ok) {
               this.runDetail = await r.json();
               this.traceDetailOpen = true;
@@ -1690,7 +1690,7 @@
           if (!trace_id || this.isReplaying || this.isRunning) return;
           this.isReplaying = true;
           try {
-            const r = await fetch('http://localhost:8000/runs/' + trace_id + '/replay');
+            const r = await fetch('/runs/' + trace_id + '/replay');
             if (!r.ok) throw new Error('replay failed');
             const { trace_id: newId } = await r.json();
             this.isReplaying = false;
@@ -1746,7 +1746,7 @@
           if (this.demoMode) {
             pack = mockResults[trace_id] || generateMockPack(this.runs.find(r => r.trace_id === trace_id));
           } else {
-            try { const r = await fetch('http://localhost:8000/result/' + trace_id); if (r.ok) pack = await r.json(); } catch (e) {}
+            try { const r = await fetch('/result/' + trace_id); if (r.ok) pack = await r.json(); } catch (e) {}
           }
           this.compareData[slot] = pack;
           this.compareData = [...this.compareData];
